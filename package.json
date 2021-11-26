@@ -1,0 +1,12 @@
+{
+  "name": "twiner-rainofstages",
+  "author": {
+    "name": "twiner",
+    "email": "",
+    "url": ""
+  },
+  "displayName": "Rain of Stages",
+  "version": "4.0.0",
+  "unity": "2018.4",
+  "description": "The Custom Stage base mod for Risk of Rain 2"
+}

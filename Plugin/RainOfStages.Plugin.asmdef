@@ -1,0 +1,29 @@
+{
+    "name": "RainOfStages.Plugin",
+    "references": [
+        "Unity.TextMeshPro",
+        "Unity.Postprocessing.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Assembly-CSharp.dll",
+        "BepInEx.dll",
+        "MonoMod.RuntimeDetour.dll",
+        "MonoMod.Utils.dll",
+        "Assembly-CSharp.dll",
+        "Rewired_CSharp.dll",
+        "Wwise.dll",
+        "Unity.TextMeshPro.dll",
+        "Unity.Postprocessing.Runtime.dll",
+        "HGCSharpUtils.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "riskofrain2",
+        "bbepis-bepinexpack"
+    ]
+}
