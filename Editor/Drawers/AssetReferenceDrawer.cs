@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor.Drawers
+namespace PassivePicasso.RainOfStages.Designer.Drawers
 {
     [CustomPropertyDrawer(typeof(WeakAssetReferenceAttribute), true)]
     public class AssetReferenceDrawer : PropertyDrawer

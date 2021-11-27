@@ -8,7 +8,7 @@ using System.Linq;
 using System.IO;
 using static UnityEditor.EditorGUILayout;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
 
     public class UnhookForbidden 

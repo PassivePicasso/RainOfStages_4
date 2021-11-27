@@ -2,7 +2,7 @@
 using Unity.Jobs;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor.NodeGraph
+namespace PassivePicasso.RainOfStages.Designer.NodeGraph
 {
     public struct VoxelCheckJob : IJobParallelFor
     {

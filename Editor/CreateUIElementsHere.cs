@@ -14,7 +14,7 @@ using UnityEngine.Experimental.UIElements.StyleEnums;
 using Button = UnityEngine.Experimental.UIElements.Button;
 #endif
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     public static class CreateUIElementsHere    {
 

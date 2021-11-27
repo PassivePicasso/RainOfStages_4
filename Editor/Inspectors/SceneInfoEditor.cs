@@ -1,7 +1,7 @@
 ﻿using RoR2;
 using UnityEditor;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     [CustomEditor(typeof(SceneInfo), true)]
     public class SceneInfoEditor : UnityEditor.Editor

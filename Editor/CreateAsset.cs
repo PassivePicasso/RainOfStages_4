@@ -13,7 +13,7 @@ using BodySpawnCard = PassivePicasso.RainOfStages.Proxy.BodySpawnCard;
 using CharacterSpawnCard = PassivePicasso.RainOfStages.Proxy.CharacterSpawnCard;
 using InteractableSpawnCard = PassivePicasso.RainOfStages.Proxy.InteractableSpawnCard;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     using Path = System.IO.Path;
     public class CreateAsset : ScriptableObject
@@ -35,19 +35,9 @@ namespace PassivePicasso.RainOfStages.Editor
 
             var rosConfigured = AssetDatabase.IsValidFolder("Assets/RainOfStages");
             if (rosConfigured) return;
+            if (!AssetDatabase.IsValidFolder("Packages/twiner-rainofstages/RainOfStages/plugins/RainOfStages")) return;
 
             AssetDatabase.ImportPackage("Packages/twiner-rainofstages/RainOfStages/plugins/RainOfStages/RainOfStagesEditorPack.unityPackage", false);
-
-            //var editorPack = AssetDatabase.FindAssets("RainOfStagesEditorPack", new[] { "Packages" }).Select(x => AssetDatabase.GUIDToAssetPath(x)).ToArray();
-            //if (editorPack.Length > 0)
-            //{
-            //    var assetPath = editorPack[0];
-            //    var pwd = Directory.GetCurrentDirectory();
-            //    var finalPath = Path.Combine(pwd, assetPath);
-            //    var fullPath = Path.GetFullPath(finalPath);
-            //    Debug.Log(fullPath);
-            //    System.Diagnostics.Process.Start(fullPath);
-            //}
         }
 
 

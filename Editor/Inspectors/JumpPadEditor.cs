@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     [CustomEditor(typeof(JumpPad)), CanEditMultipleObjects]
     public class JumpPadEditor : UnityEditor.Editor

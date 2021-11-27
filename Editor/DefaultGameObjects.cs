@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     public class DefaultGameObjects : ScriptableObject
     {

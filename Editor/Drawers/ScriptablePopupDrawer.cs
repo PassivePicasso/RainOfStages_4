@@ -1,10 +1,10 @@
-using PassivePicasso.RainOfStages.Editor.DataPreProcessors;
+using PassivePicasso.RainOfStages.Designer.DataPreProcessors;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     public abstract class ScriptablePopupDrawer<T, DPP> : PropertyDrawer where T : ScriptableObject where DPP : DataPreProcessor<T, DPP>, new()
     {

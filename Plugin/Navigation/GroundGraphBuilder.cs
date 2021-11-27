@@ -14,38 +14,12 @@ using static RoR2.Navigation.NodeGraph;
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
     [ExecuteAlways]
-    internal class GroundGraphBuilder : MonoBehaviour
+    internal class GroundGraphBuilder : GraphBuilder
     {
-        public static System.Reflection.FieldInfo NodesField =
-            typeof(NodeGraph).GetField("nodes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-        public static System.Reflection.FieldInfo LinksField =
-            typeof(NodeGraph).GetField("links", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
         public static System.Reflection.FieldInfo nodeGraphAssetField =
             typeof(SceneInfo).GetField($"groundNodesAsset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-        protected readonly HullDef HumanHull = HullDef.Find(HullClassification.Human);
-        protected readonly HullDef GolemHull = HullDef.Find(HullClassification.Golem);
-        protected readonly HullDef QueenHull = HullDef.Find(HullClassification.BeetleQueen);
-
         private HullDef[] HullDefinitions;
-        protected float HumanHeight => HumanHull.height;
-        protected float GolemHeight => GolemHull.height;
-        protected float QueenHeight => QueenHull.height;
-        protected Vector3 HumanHeightOffset => Vector3.up * HumanHeight;
-        protected Vector3 GolemHeightOffset => Vector3.up * GolemHeight;
-        protected Vector3 QueenHeightOffset => Vector3.up * QueenHeight;
-
-        //construct Hull Traversal mask
-        protected (Vector3 bottom, Vector3 top) HumanCapsule(Vector3 nodePosition) => (bottom: nodePosition, top: nodePosition + HumanHeightOffset);
-        protected (Vector3 bottom, Vector3 top) GolemCapsule(Vector3 nodePosition) => (bottom: nodePosition, top: nodePosition + GolemHeightOffset);
-        protected (Vector3 bottom, Vector3 top) QueenCapsule(Vector3 nodePosition) => (bottom: nodePosition, top: nodePosition + QueenHeightOffset);
-
-        protected static readonly Collider[] colliders = new Collider[128];
-        protected static readonly RaycastHit[] hitArray = new RaycastHit[128];
-        protected readonly List<int> resultsIndices = new List<int>();
-
         public MeshFilter[] meshFilters;
         public float Margin;
         public Vector3 TargetNormal;
@@ -73,6 +47,19 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 var query = new KDQuery();
                 pointTree.SetCount(pointCount);
                 var nodePoints = new List<Vector3>();
+
+                var staticNodes = Resources.FindObjectsOfTypeAll<StaticNode>();
+                foreach(var staticNode in staticNodes)
+                {
+                    var position = staticNode.transform.localToWorldMatrix.MultiplyPoint(staticNode.position);
+                    nodePoints.Add(position);
+                    nodes.Add(new Node
+                    {
+                        position = position,
+                        flags = staticNode.nodeFlags,
+                        forbiddenHulls = staticNode.forbiddenHulls,
+                    });
+                }
 
                 foreach (var filter in meshFilters)
                 {

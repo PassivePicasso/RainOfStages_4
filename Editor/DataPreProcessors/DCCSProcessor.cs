@@ -1,6 +1,6 @@
 using RoR2;
 
-namespace PassivePicasso.RainOfStages.Editor.DataPreProcessors
+namespace PassivePicasso.RainOfStages.Designer.DataPreProcessors
 {
     public class DCCSProcessor : DataPreProcessor<DirectorCardCategorySelection, DCCSProcessor>
     {

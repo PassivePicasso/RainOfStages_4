@@ -1,15 +1,13 @@
+using PassivePicasso.RainOfStages.Plugin.Navigation;
 using RoR2;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Behaviours
 {
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider), typeof(StaticNode), typeof(StaticNode))]
     public class JumpPad : MonoBehaviour
     {
-        [SerializeField]
-        public Vector3 jumpVelocity;
-
         public float time;
 
         [SerializeField, HideInInspector]
@@ -48,9 +46,6 @@ namespace PassivePicasso.RainOfStages.Behaviours
             transform.forward = planarTargetPosition - origin;
 
             Gizmos.DrawSphere(destination, 3);
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(origin, origin + jumpVelocity);
-            Gizmos.color = Color.white;
         }
 
         public IEnumerable<Vector3> Trajectory()
@@ -58,7 +53,7 @@ namespace PassivePicasso.RainOfStages.Behaviours
             var to = transform.position;
             var tf = time * 1.75f;
             var velocity = GetVelocity(tf);
-            var timeStep = Time.fixedDeltaTime;
+            var timeStep = Time.fixedDeltaTime * 8;
             for (float f = tf; f > 0; f -= timeStep)
             {
                 var from = to;

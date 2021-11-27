@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor.DataPreProcessors
+namespace PassivePicasso.RainOfStages.Designer.DataPreProcessors
 {
     public abstract class DataPreProcessor<T, DPP> where T : Object where DPP : DataPreProcessor<T, DPP>, new()
     {

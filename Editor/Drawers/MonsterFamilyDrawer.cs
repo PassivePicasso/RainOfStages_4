@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace PassivePicasso.RainOfStages.Editor.Drawers
+namespace PassivePicasso.RainOfStages.Designer.Drawers
 {
     using MonsterFamily = global::RoR2.ClassicStageInfo.MonsterFamily;
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace PassivePicasso.RainOfStages.Editor.Inspectors
+namespace PassivePicasso.RainOfStages.Designer.Inspectors
 {
     [CustomEditor(typeof(AirGraphBuilder), true)]
     public class AirGraphBuilderEditor : UnityEditor.Editor
@@ -20,10 +20,10 @@ namespace PassivePicasso.RainOfStages.Editor.Inspectors
 
             if (GUILayout.Button("Add Probe"))
             {
-                var probe = new GameObject($"Probe_{builder.Probes.Count}", typeof(AirNavigationProbe));
+                var probe = new GameObject($"Probe_{builder.Probes.Count}", typeof(NavigationProbe));
                 probe.transform.parent = builder.transform;
-                if (builder.Probes == null) builder.Probes = new List<AirNavigationProbe>();
-                builder.Probes.Add(probe.GetComponent<AirNavigationProbe>());
+                if (builder.Probes == null) builder.Probes = new List<NavigationProbe>();
+                builder.Probes.Add(probe.GetComponent<NavigationProbe>());
                 var newStates = new bool[builder.Probes.Count];
                 probeStates[builder].CopyTo(newStates, 0);
                 probeStates[builder] = newStates;

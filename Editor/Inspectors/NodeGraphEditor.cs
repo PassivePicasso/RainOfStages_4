@@ -1,6 +1,6 @@
 using UnityEditor;
 using UnityEngine;
-namespace PassivePicasso.RainOfStages.Editor
+namespace PassivePicasso.RainOfStages.Designer
 {
     using NG = global::RoR2.Navigation.NodeGraph;
     [CustomEditor(typeof(NG), true)]
