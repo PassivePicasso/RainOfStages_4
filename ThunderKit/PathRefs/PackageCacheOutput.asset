@@ -31,6 +31,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Value: PackageCache
 --- !u!114 &114129837313277828
 MonoBehaviour:
@@ -46,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Value: Projects
 --- !u!114 &114203375025976186
 MonoBehaviour:
@@ -61,6 +63,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Value: F:\
 --- !u!114 &114941755732663838
 MonoBehaviour:
@@ -76,4 +79,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   value: Twiner-<ManifestName>-<ManifestVersion>.zip

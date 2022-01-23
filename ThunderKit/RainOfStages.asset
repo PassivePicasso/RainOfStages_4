@@ -34,6 +34,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestPluginStaging>
   assetBundles:
@@ -54,6 +55,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestStagingRoot>
   url: https://github.com/PassivePicasso/Rain-of-Stages
@@ -71,16 +73,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestStagingRoot>
   Author: Twiner
   Name: RainOfStages
-  Icon: {fileID: 0}
   Description: Rain of Stages is a framework to assist in the creation, testing, packaging
     and deployment of custom Risk of Rain 2 stages and mods
   Version: 3.0.11
   Dependencies:
-  - {fileID: 11400000, guid: 6893422731aa6d67012f5f4d8209c304, type: 2}
+  - {fileID: 11400000, guid: 2d4d09ec817c24698d35dc9bf0704fdc, type: 2}
 --- !u!114 &114339530207379210
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -95,6 +97,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestPluginStaging>
   unityPackages:
@@ -113,13 +116,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestPluginStaging>
   definitions:
   - {fileID: 5897886265953266890, guid: 100456513cf031f4ba64390628e6feb9, type: 3}
   - {fileID: 5897886265953266890, guid: 47ea1817199a52944ba397d07300a8ed, type: 3}
-  - {fileID: 5897886265953266890, guid: 77ccaf49895b0d64e87cd4b4faf83c49, type: 3}
-  - {fileID: 5897886265953266890, guid: a09b502a3463f794a83cf80a67a246d2, type: 3}
 --- !u!114 &114978965694430374
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -134,6 +136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   StagingPaths:
   - <ManifestStagingRoot>
   files:

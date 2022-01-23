@@ -34,7 +34,7 @@ MonoBehaviour:
   - {fileID: 114698388137127062}
   - {fileID: 114103642454284120}
   - {fileID: 114110618437809084}
-  manifest: {fileID: 11400000, guid: 7da2593dbeccb024abcb3cd5d4cab7d4, type: 2}
+  manifest: {fileID: 11400000, guid: 3788d3942ba76e342c728f0149bba8ed, type: 2}
 --- !u!114 &114103642454284120
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -49,6 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
 --- !u!114 &114110618437809084
 MonoBehaviour:
@@ -64,12 +65,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
   PerManifest: 1
   ExcludedManifests:
-  - {fileID: 11400000, guid: 6893422731aa6d67012f5f4d8209c304, type: 2}
+  - {fileID: 0}
   ArchiveType: 1
-  IncludeBaseDirectory: 1
   Source: <ManifestStagingRoot>
   Output: <PackageCacheOutput>
 --- !u!114 &114698388137127062
@@ -86,6 +87,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
   OverrideManifest: 1
-  executePipeline: {fileID: 11400000, guid: de415cdbd4e965a45918136f9d614d1d, type: 2}
+  targetpipeline: {fileID: 11400000, guid: 12b292b13acfdd541ba7384040f5bc27, type: 2}

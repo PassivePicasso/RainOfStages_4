@@ -18,7 +18,7 @@ MonoBehaviour:
   - {fileID: 114537630434205182}
   - {fileID: 114366308522735304}
   - {fileID: 114888345249068578}
-  manifest: {fileID: 11400000, guid: 7da2593dbeccb024abcb3cd5d4cab7d4, type: 2}
+  manifest: {fileID: 11400000, guid: 3788d3942ba76e342c728f0149bba8ed, type: 2}
 --- !u!114 &114366308522735304
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -33,6 +33,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
 --- !u!114 &114520525572577756
 MonoBehaviour:
@@ -48,6 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
   AssetBundleBuildOptions: 256
   buildTarget: 5
@@ -68,6 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
   StagingPath: <StagingRoot>
   ExcludedManifests: []
@@ -85,9 +88,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
   stageDebugDatabases: 1
-  preferPlayerBuilds: 0
+  assemblyArtifactPath: <AssemblyStaging>
+  buildTarget: 5
+  buildTargetGroup: 1
 --- !u!114 &114888345249068578
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -102,4 +108,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
+  ErrorStacktrace: 
   Active: 1
