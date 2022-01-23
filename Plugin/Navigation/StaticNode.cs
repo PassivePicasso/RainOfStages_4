@@ -1,49 +1,58 @@
 ﻿using RoR2;
 using RoR2.Navigation;
-using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
+    [ExecuteAlways]
     public class StaticNode : MonoBehaviour
     {
+        private static Mesh mesh;
+        public Color staticNodeColor = Color.green;
+
         [EnumMask(typeof(HullMask))]
         public HullMask forbiddenHulls;
         [EnumMask(typeof(NodeFlags))]
         public NodeFlags nodeFlags;
+        public bool overridePosition;
         public Vector3 position;
+        [SerializeField, HideInInspector]
+        public Vector3 lastPosition;
         public StaticNode[] HardLinks;
         public bool overrideDistanceScore;
         public float distanceScore;
 
-        private Material gizmoMaterial;
-
-        private void OnRenderObject()
+        private void Update()
         {
-            if (!Selection.gameObjects.Contains(gameObject)) return;
-            if (!gizmoMaterial) gizmoMaterial = new Material(Shader.Find("VR/SpatialMapping/Wireframe"));
-            gizmoMaterial.SetPass(0);
-            GL.PushMatrix();
-            GL.MultMatrix(transform.localToWorldMatrix);
-            GL.Begin(GL.TRIANGLES);
-            try
+            if (!overridePosition)
+                position = transform.position;
+
+            if (lastPosition != position)
             {
-                //GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                //GL.Color(Color.green);
-                //for (int i = 0; i < cubeTriangles.Length; i += 3)
-                //{
-                //    var a = cubeVertices[cubeTriangles[i + 0]] * 2;
-                //    var b = cubeVertices[cubeTriangles[i + 1]] * 2;
-                //    var c = cubeVertices[cubeTriangles[i + 2]] * 2;
-                //    GL.Vertex3(a.x, a.y, a.z);
-                //    GL.Vertex3(b.x, b.y, b.z);
-                //    GL.Vertex3(c.x, c.y, c.z);
-                //}
+                lastPosition = position;
+                try
+                {
+                    var ggb = Resources.FindObjectsOfTypeAll<GroundGraphBuilder>()[0];
+                    ggb.rebuild = true;
+                }
+                catch { }
             }
-            catch { }
-            GL.End();
-            GL.PopMatrix();
+        }
+
+        void OnDrawGizmos()
+        {
+            if (!mesh)
+            {
+                var filter = GameObject
+                    .CreatePrimitive(PrimitiveType.Cube)
+                    .GetComponent<MeshFilter>();
+                mesh = filter.sharedMesh;
+                DestroyImmediate(filter.gameObject);
+            }
+
+            Gizmos.matrix = Matrix4x4.TRS(position - Vector3.up * 0.5f, Quaternion.identity, Vector3.one * 2);
+            Gizmos.color = staticNodeColor;
+            Gizmos.DrawMesh(mesh);
         }
     }
 }

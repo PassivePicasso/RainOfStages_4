@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using PassivePicasso.RainOfStages.Behaviours;
+using RoR2;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace PassivePicasso.RainOfStages.Designer
 {
     [CustomEditor(typeof(JumpPad)), CanEditMultipleObjects]
-    public class JumpPadEditor : UnityEditor.Editor
+    public class JumpPadEditor : Editor
     {
         Vector3[] trajectoryPoints;
         Vector3 peak;
@@ -15,6 +16,13 @@ namespace PassivePicasso.RainOfStages.Designer
         float verticalImpactVelocity;
         Vector3 lastPosition;
         float lastTime;
+
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+            var pad = target as JumpPad;
+            pad.time = Mathf.Clamp(pad.time, 1, float.MaxValue);
+        }
 
         private void OnSceneGUI()
         {
@@ -26,6 +34,12 @@ namespace PassivePicasso.RainOfStages.Designer
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
+                if (jumpPad.groundingDistance > 0)
+                {
+                    var raised = newTargetPosition + Vector3.up * jumpPad.groundingDistance;
+                    if (Physics.Raycast(new Ray(raised, Vector3.down), out var hitInfo, jumpPad.groundingDistance * 2, LayerIndex.world.mask))
+                        newTargetPosition = hitInfo.point;
+                }
                 jumpPad.destination = newTargetPosition;
                 updateTrajectory = true;
             }
@@ -40,14 +54,13 @@ namespace PassivePicasso.RainOfStages.Designer
                 verticalImpactVelocity = Mathf.Abs((velocityPick[1].y - velocityPick[0].y) / Time.fixedDeltaTime);
             }
 
-            Handles.DotHandleCap(0, peak, Quaternion.identity, 0.75F, EventType.Repaint);
-
             Handles.BeginGUI();
+            Handles.color = Color.red;
             EditorGUILayout.BeginVertical();
             EditorGUILayout.LabelField($"Pad: {jumpPad.transform.position}");
             EditorGUILayout.LabelField($"Peak: {peak}");
             EditorGUILayout.LabelField($"Target: {newTargetPosition}");
-            EditorGUILayout.LabelField($"Impact Velocity: {impactVelocity }");
+            EditorGUILayout.LabelField($"Impact Velocity: {impactVelocity}");
             EditorGUILayout.LabelField($"Vertical Impact Velocity: {verticalImpactVelocity }");
 
             var impactDamage = CalculateCollisionDamage(verticalImpactVelocity);

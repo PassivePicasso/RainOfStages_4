@@ -55,9 +55,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         protected Vector3 HumanHeightOffset => Vector3.up * HumanHeight;
         protected Vector3 GolemHeightOffset => Vector3.up * GolemHeight;
         protected Vector3 QueenHeightOffset => Vector3.up * QueenHeight;
-        protected (Vector3 bottom, Vector3 top) HumanCapsule(Vector3 center) => (bottom: center, top: center + HumanHeightOffset);
-        protected (Vector3 bottom, Vector3 top) GolemCapsule(Vector3 center) => (bottom: center, top: center + GolemHeightOffset);
-        protected (Vector3 bottom, Vector3 top) QueenCapsule(Vector3 center) => (bottom: center, top: center + QueenHeightOffset);
+        protected (Vector3 bottom, Vector3 top) HumanCapsule(Vector3 position) => (bottom: position, top: position + HumanHeightOffset);
+        protected (Vector3 bottom, Vector3 top) GolemCapsule(Vector3 position) => (bottom: position, top: position + GolemHeightOffset);
+        protected (Vector3 bottom, Vector3 top) QueenCapsule(Vector3 position) => (bottom: position, top: position + QueenHeightOffset);
 
         protected readonly List<int> resultsIndices = new List<int>();
 

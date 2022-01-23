@@ -51,7 +51,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return point;
         }
 
-        protected bool TryAddLink(Node a, Node b, int nodeAIndex, int nodeBIndex, List<Link> links)
+        protected bool TryAddLink(ref Node a, ref Node b, int nodeAIndex, int nodeBIndex, List<Link> links)
         {
             var maxDist = Vector3.Distance(a.position, b.position);
             Vector3 direction = (b.position - a.position).normalized;
@@ -60,8 +60,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
             //construct Hull Traversal mask
             var humanCapsule = HumanCapsule(a.position + (Vector3.down * HumanHeight / 2));
-            var golemCapsule = GolemCapsule(a.position + (Vector3.down * HumanHeight / 2));
-            var queenCapsule = QueenCapsule(a.position + (Vector3.down * HumanHeight / 2));
+            var golemCapsule = GolemCapsule(a.position + (Vector3.down * GolemHeight / 2));
+            var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
 
             if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
             {
@@ -77,7 +77,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             if (mask == HullMask.None) return false;
 
             //Set node forbiddenHulls
-            a.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
             b.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
 
             links.Add(new Link
@@ -273,7 +272,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var a = nodes[i];
                     var b = nodes[nni];
 
-                    if (!TryAddLink(a, b, i, nni, links))
+                    if (!TryAddLink(ref a, ref b, i, nni, links))
                     {
                         skipped++;
                         continue;

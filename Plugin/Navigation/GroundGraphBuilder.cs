@@ -14,7 +14,7 @@ using static RoR2.Navigation.NodeGraph;
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
     [ExecuteAlways]
-    internal class GroundGraphBuilder : GraphBuilder
+    public class GroundGraphBuilder : GraphBuilder
     {
         public static System.Reflection.FieldInfo nodeGraphAssetField =
             typeof(SceneInfo).GetField($"groundNodesAsset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -49,13 +49,12 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 var nodePoints = new List<Vector3>();
 
                 var staticNodes = Resources.FindObjectsOfTypeAll<StaticNode>();
-                foreach(var staticNode in staticNodes)
+                foreach (var staticNode in staticNodes)
                 {
-                    var position = staticNode.transform.localToWorldMatrix.MultiplyPoint(staticNode.position);
-                    nodePoints.Add(position);
+                    nodePoints.Add(staticNode.position);
                     nodes.Add(new Node
                     {
-                        position = position,
+                        position = staticNode.position,
                         flags = staticNode.nodeFlags,
                         forbiddenHulls = staticNode.forbiddenHulls,
                     });
@@ -109,24 +108,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         Profiler.EndSample();
                         if (resultsIndices.Any())
                         {
-                            //int nv = resultsIndices[0];
-                            //var nudgedPosition = Vector3.Lerp(nodePoints[nv], position, 0.25f);
-                            //var postModTest = nudgedPosition + (Vector3.up * lift);
-                            //if (Physics.OverlapSphereNonAlloc(postModTest + (HumanHeightOffset / 2), HumanHeight / 2, colliders, LayerIndex.world.mask) == 0)
-                            //{
-                            //    var hits = Physics.RaycastNonAlloc(postModTest, Vector3.down, hitArray, HumanHeight);
-                            //    if (hits > 0)
-                            //        nudgedPosition = hitArray[0].point;
-
-                            //    var node = nodes[nv];
-
-                            //    node.position = nudgedPosition;
-                            //    nodePoints[nv] = nudgedPosition;
-
-                            //    nodes[nv] = node;
-
-                            //    pointTree.Build(nodePoints);
-                            //}
                             failures++;
                             Profiler.EndSample();
                             continue;
@@ -169,7 +150,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     nodePoints.Add(position);
                     nodes.Add(new Node
                     {
-                        forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask,
                         flags = flags,
                         position = position
                     });
@@ -201,13 +181,27 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var a = nodes[i];
                     var b = nodes[nni];
 
-                    var allowedHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen);
-                    allowedHulls ^= a.forbiddenHulls | b.forbiddenHulls;
+                    var maxDist = Vector3.Distance(a.position, b.position);
+                    Vector3 direction = (b.position - a.position).normalized;
 
-                    var testOffset = (Vector3.up * lift);
-                    var testPositionA = a.position + testOffset;
-                    var testPositionB = b.position + testOffset;
-                    if (Physics.Linecast(testPositionA, testPositionB, LayerIndex.world.mask))
+                    //construct Hull Traversal mask
+                    var humanCapsule = HumanCapsule(a.position + Vector3.up * lift);
+                    var golemCapsule = GolemCapsule(a.position + Vector3.up * lift);
+                    var queenCapsule = QueenCapsule(a.position + Vector3.up * lift);
+
+                    var mask = HullMask.None;
+                    if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                    {
+                        mask |= HullMask.Human;
+                        if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                        {
+                            mask |= HullMask.Golem;
+                            if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                                mask |= HullMask.BeetleQueen;
+                        }
+                    }
+
+                    if (mask == HullMask.None)
                     {
                         skipped++;
                         continue;
@@ -218,11 +212,13 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         distanceScore = Mathf.Sqrt((b.position - a.position).sqrMagnitude),
                         nodeIndexA = new NodeIndex(i),
                         nodeIndexB = new NodeIndex(nni),
-                        hullMask = (int)allowedHulls,
-                        jumpHullMask = (int)allowedHulls,
+                        hullMask = (int)mask,
+                        jumpHullMask = (int)mask,
                         maxSlope = 90,
                         gateIndex = (byte)b.gateIndex
                     });
+
+                    b.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
 
                     nodes[i] = a;
                     nodes[nni] = b;

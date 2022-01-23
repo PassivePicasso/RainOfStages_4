@@ -1,20 +1,54 @@
 using PassivePicasso.RainOfStages.Plugin.Navigation;
 using RoR2;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Behaviours
 {
-    [RequireComponent(typeof(Collider), typeof(StaticNode), typeof(StaticNode))]
+    [ExecuteAlways, RequireComponent(typeof(SphereCollider))]
     public class JumpPad : MonoBehaviour
     {
+        private static readonly string DebugShaderName = "Unlit/Color";
         public float time;
-
-        [SerializeField, HideInInspector]
         public Vector3 destination;
         private Vector3 origin => transform.position;
-
+        public int groundingDistance = -1;
         public string jumpSoundString;
+        [SerializeField, HideInInspector]
+        private StaticNode originNode;
+        [SerializeField, HideInInspector]
+        private StaticNode destinationNode;
+
+        private void Update()
+        {
+            if (!originNode)
+            {
+                originNode = gameObject.AddComponent<StaticNode>();
+                originNode.overridePosition = false;
+                originNode.overrideDistanceScore = true;
+            }
+            if (!destinationNode)
+            {
+                destinationNode = gameObject.AddComponent<StaticNode>();
+                destinationNode.overridePosition = true;
+                destinationNode.overrideDistanceScore = true;
+            }
+            originNode.hideFlags = HideFlags.NotEditable;
+            destinationNode.hideFlags = HideFlags.NotEditable;
+
+            if (originNode.HardLinks == null || !originNode.HardLinks.Contains(destinationNode))
+                originNode.HardLinks = new StaticNode[] { destinationNode };
+
+            destinationNode.position = destination;
+            if (groundingDistance > 0)
+            {
+                var groundingPosition = transform.position + Vector3.up * groundingDistance;
+                if (Physics.Raycast(new Ray(groundingPosition, Vector3.down), out var hitInfo, groundingDistance * 2, LayerIndex.world.mask))
+                    groundingPosition = hitInfo.point;
+                transform.position = groundingPosition;
+            }
+        }
 
         public void OnTriggerEnter(Collider other)
         {
@@ -31,21 +65,28 @@ namespace PassivePicasso.RainOfStages.Behaviours
             motor.Motor.ForceUnground();
         }
 
+        private Material gizmoMaterial;
+        private static Mesh mesh;
         void OnDrawGizmos()
         {
-            //DrawArc();
-            Gizmos.color = Color.white;
+            if (!gizmoMaterial || gizmoMaterial.shader.name != DebugShaderName)
+                gizmoMaterial = new Material(Shader.Find(DebugShaderName));
+            gizmoMaterial.color = Color.red;
+            gizmoMaterial.SetPass(0);
 
-            foreach (var point in Trajectory())
-                Gizmos.DrawSphere(point, 0.5f);
-
-            var upPoint = transform.position + Vector3.up;
-            var plane = new Plane(transform.position, upPoint, destination);
+            var trajectory = Trajectory().ToArray();
+            GL.PushMatrix();
+            GL.Begin(GL.LINES);
+            for (int i = 0; i < trajectory.Length; i++)
+            {
+                GL.Color(Color.red);
+                GL.Vertex3(trajectory[i].x, trajectory[i].y, trajectory[i].z);
+            }
+            GL.End();
+            GL.PopMatrix();
 
             var planarTargetPosition = new Vector3(destination.x, origin.y, destination.z);
             transform.forward = planarTargetPosition - origin;
-
-            Gizmos.DrawSphere(destination, 3);
         }
 
         public IEnumerable<Vector3> Trajectory()
