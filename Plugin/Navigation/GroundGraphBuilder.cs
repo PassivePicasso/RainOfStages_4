@@ -48,16 +48,31 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 pointTree.SetCount(pointCount);
                 var nodePoints = new List<Vector3>();
 
-                var staticNodes = Resources.FindObjectsOfTypeAll<StaticNode>();
-                foreach (var staticNode in staticNodes)
+                var staticNodes = Resources.FindObjectsOfTypeAll<StaticNode>().ToList();
+                for (int i = 0; i < staticNodes.Count; i++)
                 {
+                    var staticNode = staticNodes[i];
                     nodePoints.Add(staticNode.position);
-                    nodes.Add(new Node
+                    Node item = new Node
                     {
                         position = staticNode.position,
                         flags = staticNode.nodeFlags,
                         forbiddenHulls = staticNode.forbiddenHulls,
-                    });
+                        linkListIndex = new LinkListIndex { index = links.Count, size = (uint)staticNode.HardLinks.Length }
+                    };
+                    nodes.Add(item);
+                    for (int j = 0; j < staticNode.HardLinks.Length; j++)
+                    {
+                        var destinationNode = staticNode.HardLinks[j];
+                        links.Add(new Link
+                        {
+                            nodeIndexA = new NodeIndex(staticNodes.IndexOf(staticNode)),
+                            nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
+                            distanceScore = staticNode.distanceScore,
+                            hullMask = (int)((HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ destinationNode.forbiddenHulls),
+                            jumpHullMask = (int)((HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ destinationNode.forbiddenHulls),
+                        });
+                    }
                 }
 
                 foreach (var filter in meshFilters)

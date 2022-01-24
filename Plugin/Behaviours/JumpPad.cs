@@ -27,6 +27,7 @@ namespace PassivePicasso.RainOfStages.Behaviours
                 originNode = gameObject.AddComponent<StaticNode>();
                 originNode.overridePosition = false;
                 originNode.overrideDistanceScore = true;
+                originNode.staticNodeColor = Color.cyan;
             }
             if (!destinationNode)
             {
