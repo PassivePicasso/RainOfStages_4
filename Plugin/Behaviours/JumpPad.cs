@@ -19,24 +19,29 @@ namespace PassivePicasso.RainOfStages.Behaviours
         private StaticNode originNode;
         [SerializeField, HideInInspector]
         private StaticNode destinationNode;
+        public bool regenerateStaticNodes = false;
 
         private void Update()
         {
-            if (!originNode)
+            if (!originNode || regenerateStaticNodes)
             {
                 originNode = gameObject.AddComponent<StaticNode>();
                 originNode.overridePosition = false;
                 originNode.overrideDistanceScore = true;
+                originNode.nodeName = "Origin";
                 originNode.staticNodeColor = Color.cyan;
+                originNode.hideFlags = HideFlags.NotEditable;
             }
-            if (!destinationNode)
+            if (!destinationNode || regenerateStaticNodes)
             {
                 destinationNode = gameObject.AddComponent<StaticNode>();
                 destinationNode.overridePosition = true;
                 destinationNode.overrideDistanceScore = true;
+                destinationNode.nodeName = "Destination";
+                destinationNode.forbiddenHulls = HullMask.BeetleQueen;
+                destinationNode.hideFlags = HideFlags.NotEditable;
             }
-            originNode.hideFlags = HideFlags.NotEditable;
-            destinationNode.hideFlags = HideFlags.NotEditable;
+            if (regenerateStaticNodes) regenerateStaticNodes = false;
 
             if (originNode.HardLinks == null || !originNode.HardLinks.Contains(destinationNode))
                 originNode.HardLinks = new StaticNode[] { destinationNode };

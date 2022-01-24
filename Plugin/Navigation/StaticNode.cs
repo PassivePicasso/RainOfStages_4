@@ -10,6 +10,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         private static Mesh mesh;
         public Color staticNodeColor = Color.green;
 
+        public string nodeName;
         [EnumMask(typeof(HullMask))]
         public HullMask forbiddenHulls;
         [EnumMask(typeof(NodeFlags))]
