@@ -48,7 +48,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 pointTree.SetCount(pointCount);
                 var nodePoints = new List<Vector3>();
 
-                var staticNodes = Resources.FindObjectsOfTypeAll<StaticNode>().ToList();
+                var staticNodes = StaticNode.StaticNodes;
                 for (int i = 0; i < staticNodes.Count; i++)
                 {
                     var staticNode = staticNodes[i];

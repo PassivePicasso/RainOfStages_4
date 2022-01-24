@@ -2,6 +2,7 @@ using PassivePicasso.RainOfStages.Plugin.Navigation;
 using RoR2;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Behaviours
@@ -13,26 +14,19 @@ namespace PassivePicasso.RainOfStages.Behaviours
         public float time;
         public Vector3 destination;
         private Vector3 origin => transform.position;
-        public int groundingDistance = -1;
         public string jumpSoundString;
         [SerializeField, HideInInspector]
-        private StaticNode originNode;
+        public StaticNode originNode;
         [SerializeField, HideInInspector]
-        private StaticNode destinationNode;
+        public StaticNode destinationNode;
         public bool regenerateStaticNodes = false;
 
         private void Update()
         {
-            if (!originNode || regenerateStaticNodes)
-            {
-                originNode = gameObject.AddComponent<StaticNode>();
-                originNode.overridePosition = false;
-                originNode.overrideDistanceScore = true;
-                originNode.nodeName = "Origin";
-                originNode.staticNodeColor = Color.cyan;
-                originNode.hideFlags = HideFlags.NotEditable;
-            }
-            if (!destinationNode || regenerateStaticNodes)
+            if (regenerateStaticNodes)
+                foreach (var node in GetComponents<StaticNode>())
+                    DestroyImmediate(node);
+            if (!destinationNode)
             {
                 destinationNode = gameObject.AddComponent<StaticNode>();
                 destinationNode.overridePosition = true;
@@ -40,20 +34,24 @@ namespace PassivePicasso.RainOfStages.Behaviours
                 destinationNode.nodeName = "Destination";
                 destinationNode.forbiddenHulls = HullMask.BeetleQueen;
                 destinationNode.hideFlags = HideFlags.NotEditable;
+                destinationNode.drawGizmo = true;
+                destinationNode.HardLinks = new StaticNode[0];
+            }
+            if (!originNode)
+            {
+                originNode = gameObject.AddComponent<StaticNode>();
+                originNode.overridePosition = false;
+                originNode.overrideDistanceScore = true;
+                originNode.nodeName = "Origin";
+                originNode.staticNodeColor = Color.cyan;
+                originNode.hideFlags = HideFlags.NotEditable;
+                originNode.drawGizmo = true;
+                originNode.HardLinks = new StaticNode[] { destinationNode };
             }
             if (regenerateStaticNodes) regenerateStaticNodes = false;
 
-            if (originNode.HardLinks == null || !originNode.HardLinks.Contains(destinationNode))
-                originNode.HardLinks = new StaticNode[] { destinationNode };
-
             destinationNode.position = destination;
-            if (groundingDistance > 0)
-            {
-                var groundingPosition = transform.position + Vector3.up * groundingDistance;
-                if (Physics.Raycast(new Ray(groundingPosition, Vector3.down), out var hitInfo, groundingDistance * 2, LayerIndex.world.mask))
-                    groundingPosition = hitInfo.point;
-                transform.position = groundingPosition;
-            }
+
         }
 
         public void OnTriggerEnter(Collider other)
@@ -72,7 +70,6 @@ namespace PassivePicasso.RainOfStages.Behaviours
         }
 
         private Material gizmoMaterial;
-        private static Mesh mesh;
         void OnDrawGizmos()
         {
             if (!gizmoMaterial || gizmoMaterial.shader.name != DebugShaderName)

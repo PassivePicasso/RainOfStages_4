@@ -24,25 +24,61 @@ namespace PassivePicasso.RainOfStages.Designer
             pad.time = Mathf.Clamp(pad.time, 1, float.MaxValue);
         }
 
+        private void OnEnable()
+        {
+            Tools.hidden = true;
+        }
+        private void OnDisable()
+        {
+            Tools.hidden = false;
+        }
         private void OnSceneGUI()
         {
             JumpPad jumpPad = (JumpPad)target;
             bool updateTrajectory = false;
 
             EditorGUI.BeginChangeCheck();
-            Vector3 newTargetPosition = Handles.PositionHandle(jumpPad.destination, Quaternion.identity);
-            if (EditorGUI.EndChangeCheck())
+            Vector3 newTargetPosition = jumpPad.destination;
+            using (new Handles.DrawingScope(jumpPad.destinationNode.staticNodeColor))
             {
-                Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
-                if (jumpPad.groundingDistance > 0)
+                var changedPosition = Handles.Slider(newTargetPosition, Vector3.up, 1f, Handles.CylinderHandleCap, 0.1f);
+                if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
                 {
-                    var raised = newTargetPosition + Vector3.up * jumpPad.groundingDistance;
-                    if (Physics.Raycast(new Ray(raised, Vector3.down), out var hitInfo, jumpPad.groundingDistance * 2, LayerIndex.world.mask))
+                    Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                    if (Physics.Raycast(mouseRay, out var hitInfo, float.MaxValue))
+                    {
                         newTargetPosition = hitInfo.point;
+                        Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
+                        jumpPad.destination = newTargetPosition;
+                        updateTrajectory = true;
+                    }
                 }
-                jumpPad.destination = newTargetPosition;
-                updateTrajectory = true;
             }
+            newTargetPosition = jumpPad.transform.position;
+            using (new Handles.DrawingScope(jumpPad.originNode.staticNodeColor))
+            {
+                var changedPosition = Handles.Slider(newTargetPosition, Vector3.up, 1f, Handles.CylinderHandleCap, 0.1f);
+                if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
+                {
+                    Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                    if (Physics.Raycast(mouseRay, out var hitInfo, float.MaxValue, LayerIndex.world.mask))
+                    {
+                        newTargetPosition = hitInfo.point;
+                        Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
+                        jumpPad.transform.position = newTargetPosition;
+                        updateTrajectory = true;
+                    }
+                }
+            }
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.F)
+            {
+                Event.current.Use();
+                var bounds = new Bounds(jumpPad.transform.position, Vector3.zero);
+                bounds.Encapsulate(jumpPad.destination);
+                bounds.Expand(bounds.size * -.45f);
+                SceneView.currentDrawingSceneView.Frame(bounds);
+            }
+
             if (updateTrajectory || lastPosition != jumpPad.transform.position || lastTime != jumpPad.time)
             {
                 lastPosition = jumpPad.transform.position;

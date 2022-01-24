@@ -1,5 +1,6 @@
 ﻿using RoR2;
 using RoR2.Navigation;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
@@ -7,6 +8,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [ExecuteAlways]
     public class StaticNode : MonoBehaviour
     {
+        public static readonly List<StaticNode> StaticNodes = new List<StaticNode>();
+
         private static Mesh mesh;
         public Color staticNodeColor = Color.green;
 
@@ -22,13 +25,26 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public StaticNode[] HardLinks;
         public bool overrideDistanceScore;
         public float distanceScore;
+        public bool drawGizmo = true;
 
+        private void OnEnable()
+        {
+            StaticNodes.Add(this);
+        }
+        private void OnDisable()
+        {
+            StaticNodes.Remove(this);
+        }
+        private void OnDestroy()
+        {
+            StaticNodes.Remove(this);
+        }
         private void Update()
         {
             if (!overridePosition)
                 position = transform.position;
 
-            if (lastPosition != position)
+            if (Vector3.Distance(lastPosition, position) > 0.1f)
             {
                 lastPosition = position;
                 try
@@ -42,6 +58,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         void OnDrawGizmos()
         {
+            if (!drawGizmo) return;
             if (!mesh)
             {
                 var filter = GameObject
