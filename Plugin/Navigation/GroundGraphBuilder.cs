@@ -79,18 +79,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         linkListIndex = new LinkListIndex { index = links.Count, size = (uint)staticNode.HardLinks.Length }
                     };
                     nodes.Add(item);
-                    for (int j = 0; j < staticNode.HardLinks.Length; j++)
-                    {
-                        var destinationNode = staticNode.HardLinks[j];
-                        links.Add(new Link
-                        {
-                            nodeIndexA = new NodeIndex(staticNodes.IndexOf(staticNode)),
-                            nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
-                            distanceScore = staticNode.distanceScore,
-                            hullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
-                            jumpHullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
-                        });
-                    }
                 }
 
                 foreach (var filter in meshFilters)
@@ -231,6 +219,18 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 if (i < staticNodes.Count)
                 {
                     var staticNode = staticNodes[i];
+                    for (int j = 0; j < staticNode.HardLinks.Length; j++)
+                    {
+                        var destinationNode = staticNode.HardLinks[j];
+                        links.Add(new Link
+                        {
+                            nodeIndexA = new NodeIndex(staticNodes.IndexOf(staticNode)),
+                            nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
+                            distanceScore = staticNode.distanceScore,
+                            hullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
+                            jumpHullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
+                        });
+                    }
                     if (!staticNode.allowDynamicConnections || !staticNode.allowOutboundConnections)
                         continue;
                 }
@@ -301,7 +301,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     nodes[i] = a;
                     nodes[nni] = b;
                 }
-                uint linkCount = (uint)(resultsIndices.Count - skipped);
+                uint linkCount = (uint)Mathf.Max(0, links.Count - nextLinkSetIndex);
                 node.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = linkCount };
                 nodes[i] = node;
                 nextLinkSetIndex += (int)linkCount;
