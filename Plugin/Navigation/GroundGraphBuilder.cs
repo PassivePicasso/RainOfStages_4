@@ -187,21 +187,21 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         private Vector3 SurfacePosition(Vector3 position)
         {
             Profiler.BeginSample("Surfacing Position");
-            if (Physics.RaycastNonAlloc(position + Vector3.up * QueenHull.height, Vector3.up, hitArray, QueenHull.height) == 0)
+            if (Physics.RaycastNonAlloc(position, Vector3.up, hitArray, QueenHull.height, LayerIndex.world.mask) == 0)
             {
-                if (Physics.RaycastNonAlloc(position + Vector3.up * QueenHull.height, Vector3.down, hitArray, QueenHull.height - 0.1f) > 0)
+                if (Physics.RaycastNonAlloc(position + QueenHeightOffset, Vector3.down, hitArray, QueenHull.height, LayerIndex.world.mask) > 0)
                     position = hitArray[0].point;
             }
             else
-            if (Physics.RaycastNonAlloc(position + Vector3.up * GolemHull.height, Vector3.up, hitArray, GolemHull.height) == 0)
+            if (Physics.RaycastNonAlloc(position, Vector3.up, hitArray, GolemHull.height, LayerIndex.world.mask) == 0)
             {
-                if (Physics.RaycastNonAlloc(position + Vector3.up * GolemHull.height, Vector3.down, hitArray, GolemHull.height - 0.1f) > 0)
+                if (Physics.RaycastNonAlloc(position + GolemHeightOffset, Vector3.down, hitArray, GolemHull.height, LayerIndex.world.mask) > 0)
                     position = hitArray[0].point;
             }
             else
-            if (Physics.RaycastNonAlloc(position + Vector3.up * HumanHull.height, Vector3.up, hitArray, HumanHull.height) == 0)
+            if (Physics.RaycastNonAlloc(position, Vector3.up, hitArray, HumanHull.height, LayerIndex.world.mask) == 0)
             {
-                if (Physics.RaycastNonAlloc(position + Vector3.up * HumanHull.height, Vector3.down, hitArray, HumanHull.height - 0.1f) > 0)
+                if (Physics.RaycastNonAlloc(position + HumanHeightOffset, Vector3.down, hitArray, HumanHull.height, LayerIndex.world.mask) > 0)
                     position = hitArray[0].point;
             }
             Profiler.EndSample();
