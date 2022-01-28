@@ -16,6 +16,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [ExecuteAlways]
     public abstract class GraphBuilder : MonoBehaviour
     {
+        protected const HullMask AllHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen);
+
         public static System.Reflection.FieldInfo NodesField =
             typeof(NodeGraph).GetField("nodes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 

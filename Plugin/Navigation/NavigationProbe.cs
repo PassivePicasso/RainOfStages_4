@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
@@ -6,6 +7,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [ExecuteAlways]
     public class NavigationProbe : MonoBehaviour
     {
+        private static Mesh mesh;
+        public Color navigationProbeColor = Color.green;
+
         public int seed = 1;
         [SerializeField]
         public List<Vector3> nodePositions = new List<Vector3>();
@@ -17,6 +21,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public int linkDistance = 10;
         public int nodeSeparation = 5;
         public bool isDirty = false;
+        public bool drawVolumeSphere = false;
 
         [SerializeField, HideInInspector]
         private Vector3 lastPosition, lastScale;
@@ -63,6 +68,28 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 lastSeed = seed;
                 isDirty = true;
             }
+        }
+        void OnDrawGizmos()
+        {
+            if (!drawVolumeSphere) return;
+
+            //if (!mesh)
+            {
+                var filter = GameObject
+                    .CreatePrimitive(PrimitiveType.Cube)
+                    .GetComponent<MeshFilter>();
+                mesh = filter.sharedMesh;
+                DestroyImmediate(filter.gameObject);
+            }
+
+            
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Gizmos.color = navigationProbeColor;
+            Gizmos.DrawMesh(mesh);
+            var maxLength = nodePositions.Max(v => v.magnitude);
+            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.5f);
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.DrawSphere(transform.position, maxLength);
         }
     }
 }

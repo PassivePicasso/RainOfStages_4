@@ -20,8 +20,10 @@ namespace PassivePicasso.RainOfStages.Proxy
         public bool DebugTeleporterOk;
         [SerializeField]
         public bool DebugLinks;
+        public float DebugLinkVerticalOffset;
         [SerializeField]
         public bool DebugNodes;
+        
         [SerializeField]
         public bool DebugAirLinks;
         [SerializeField]
@@ -38,6 +40,25 @@ namespace PassivePicasso.RainOfStages.Proxy
 
         void OnRenderObject()
         {
+            var sceneView = SceneView.lastActiveSceneView;
+            Material material = null;
+            switch (sceneView.cameraMode.drawMode)
+            {
+                case DrawCameraMode.Textured:
+                case DrawCameraMode.Wireframe:
+                    material = new Material(Shader.Find("Hidden/GIDebug/VertexColors"));
+                    break;
+                case DrawCameraMode.TexturedWire:
+                    material = new Material(Shader.Find("Custom/ProjectorAdditiveTint"));
+                    break;
+                case DrawCameraMode.Overdraw:
+                    material = new Material(Shader.Find("Hidden/UI/Overdraw"));
+                    break;
+                default:
+                    return;
+            }
+            material.SetPass(0);
+
             var masks = new[] { HullMask.BeetleQueen, HullMask.Golem, HullMask.Human };
             if (colormap == null)
                 colormap = new Dictionary<HullMask, Color> {
@@ -51,18 +72,6 @@ namespace PassivePicasso.RainOfStages.Proxy
                 colormap[HullMask.Golem] = GolemColor;
                 colormap[HullMask.BeetleQueen] = QueenColor;
             }
-            var sceneView = SceneView.lastActiveSceneView;
-            Material material = null;
-            switch (sceneView.cameraMode)
-            {
-                case var mode when mode.drawMode == DrawCameraMode.Overdraw:
-                    material = new Material(Shader.Find("Hidden/UI/Overdraw"));
-                    break;
-                default:
-                    material = new Material(Shader.Find("Hidden/GIDebug/VertexColors"));
-                    break;
-            }
-            material.SetPass(0);
             var so = new SerializedObject(this);
             var groundNodeGraph = (NodeGraph)so.FindProperty("groundNodesAsset").objectReferenceValue;
             var airNodeGraph = (NodeGraph)so.FindProperty("airNodesAsset").objectReferenceValue;
@@ -82,14 +91,17 @@ namespace PassivePicasso.RainOfStages.Proxy
                     {
                         Vector3 nodeAPos = airNodes[link.nodeIndexA.nodeIndex].position;
                         Vector3 nodeBPos = airNodes[link.nodeIndexB.nodeIndex].position;
+                        material.color = HumanColor;
                         GL.Color(HumanColor);
                         if (((HullMask)link.hullMask).HasFlag(HullMask.Golem))
                         {
+                            material.color = GolemColor;
                             GL.Color(GolemColor);
 
                         }
                         if (((HullMask)link.hullMask).HasFlag(HullMask.BeetleQueen))
                         {
+                            material.color = QueenColor;
                             GL.Color(QueenColor);
                         }
                         if (((HullMask)link.hullMask).HasFlag(HullMask.BeetleQueen) && QueenColor.a < 0.05f)
@@ -150,27 +162,31 @@ namespace PassivePicasso.RainOfStages.Proxy
                     foreach (var mask in masks)
                         if (((HullMask)link.hullMask).HasFlag(mask))
                         {
-                            var color = colormap[mask];
-                            GL.Color(color);
+                            try
+                            {
+                                var color = colormap[mask];
+                                GL.Color(color);
 
-                            NodeGraph.Node nodeA = groundNodes[link.nodeIndexA.nodeIndex];
-                            NodeGraph.Node nodeB = groundNodes[link.nodeIndexB.nodeIndex];
-                            Vector3 nodeAPos = nodeA.position;
-                            Vector3 nodeBPos = nodeB.position;
-                            var displacement = nodeBPos - nodeAPos;
-                            var nodeAModA = nodeAPos + Vector3.up * 2;
-                            var nodeAModB = nodeAPos + (displacement * 0.2f);
+                                NodeGraph.Node nodeA = groundNodes[link.nodeIndexA.nodeIndex];
+                                NodeGraph.Node nodeB = groundNodes[link.nodeIndexB.nodeIndex];
+                                Vector3 nodeAPos = nodeA.position + Vector3.up * DebugLinkVerticalOffset;
+                                Vector3 nodeBPos = nodeB.position + Vector3.up * DebugLinkVerticalOffset;
+                                var displacement = nodeBPos - nodeAPos;
+                                var linkDirection = displacement.normalized;
 
-                            var normCross = Vector3.Cross(displacement, nodeAPos).normalized;
-                            nodeAPos += normCross * 0.1f;
-                            nodeBPos += normCross * 0.1f;
-                            nodeAModA += normCross * 0.1f;
-                            nodeAModB += normCross * 0.1f;
-                            GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
-                            GL.Vertex3(nodeBPos.x, nodeBPos.y, nodeBPos.z);
+                                var nodeAModA = nodeAPos + Vector3.up * 3;
+                                var nodeAModB = nodeAPos + (linkDirection * 3);
 
-                            GL.Vertex3(nodeAModA.x, nodeAModA.y, nodeAModA.z);
-                            GL.Vertex3(nodeAModB.x, nodeAModB.y, nodeAModB.z);
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y + 3, nodeAPos.z);
+
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
+                                GL.Vertex3(nodeBPos.x, nodeBPos.y, nodeBPos.z);
+
+                                GL.Vertex3(nodeAModA.x, nodeAModA.y, nodeAModA.z);
+                                GL.Vertex3(nodeAModB.x, nodeAModB.y, nodeAModB.z);
+                            }
+                            catch { }
                             break;
                         }
                 }

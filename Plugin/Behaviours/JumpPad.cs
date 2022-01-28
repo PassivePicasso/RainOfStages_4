@@ -29,29 +29,30 @@ namespace PassivePicasso.RainOfStages.Behaviours
             if (!destinationNode)
             {
                 destinationNode = gameObject.AddComponent<StaticNode>();
-                destinationNode.overridePosition = true;
-                destinationNode.overrideDistanceScore = true;
                 destinationNode.nodeName = "Destination";
-                destinationNode.forbiddenHulls = HullMask.BeetleQueen;
-                destinationNode.hideFlags = HideFlags.NotEditable;
-                destinationNode.drawGizmo = true;
+                destinationNode.forbiddenHulls = HullMask.None;
                 destinationNode.HardLinks = new StaticNode[0];
+                destinationNode.worldSpacePosition = true;
+                destinationNode.overrideDistanceScore = true;
+                destinationNode.allowDynamicConnections = true;
+                destinationNode.nodePosition = transform.forward * 10;
             }
             if (!originNode)
             {
                 originNode = gameObject.AddComponent<StaticNode>();
-                originNode.overridePosition = false;
-                originNode.overrideDistanceScore = true;
                 originNode.nodeName = "Origin";
+                originNode.forbiddenHulls = HullMask.BeetleQueen;
                 originNode.staticNodeColor = Color.cyan;
-                originNode.hideFlags = HideFlags.NotEditable;
-                originNode.drawGizmo = true;
                 originNode.HardLinks = new StaticNode[] { destinationNode };
+                originNode.worldSpacePosition = false;
+                originNode.relativePosition = false;
+                originNode.overrideDistanceScore = true;
+                originNode.allowDynamicConnections = true;
+                originNode.allowOutboundConnections = false;
             }
             if (regenerateStaticNodes) regenerateStaticNodes = false;
 
-            destinationNode.position = destination;
-
+            destination = destinationNode.position;
         }
 
         public void OnTriggerEnter(Collider other)

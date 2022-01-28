@@ -106,18 +106,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     else
                         Random.InitState(probe.seed);
                     var pointTree = new KDTree(16);
-                    var query = new KDQuery(2048);
+                    var query = new KDQuery(probe.targetPointCount);
                     var fails = 0;
-                    var maxFails = probe.targetPointCount / 2;
                     var localTarget = probe.targetPointCount;
                     probe.nodePositions.Clear();
                     Profiler.BeginSample("Create Probe Nodes");
                     while (probe.nodePositions.Count <= localTarget)
                     {
-                        if (maxFails == 0) break;
                         if (fails > probe.pointPasses)
                         {
-                            maxFails--;
                             localTarget--;
                             localTarget = Mathf.Clamp(localTarget, probe.targetPointCount / 2, probe.targetPointCount);
                             fails = 0;

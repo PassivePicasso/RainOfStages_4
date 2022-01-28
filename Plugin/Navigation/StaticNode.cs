@@ -10,7 +10,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     {
         public static readonly List<StaticNode> StaticNodes = new List<StaticNode>();
 
-        private static Mesh mesh;
         public Color staticNodeColor = Color.green;
 
         public string nodeName;
@@ -18,14 +17,37 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public HullMask forbiddenHulls;
         [EnumMask(typeof(NodeFlags))]
         public NodeFlags nodeFlags;
-        public bool overridePosition;
-        public Vector3 position;
-        [SerializeField, HideInInspector]
-        public Vector3 lastPosition;
-        public StaticNode[] HardLinks;
+        public Vector3 nodePosition;
         public bool overrideDistanceScore;
         public float distanceScore;
-        public bool drawGizmo = true;
+        public bool relativePosition = true;
+        public bool worldSpacePosition = true;
+        public bool allowDynamicConnections = true;
+        public bool allowOutboundConnections = true;
+        public bool allowInboundConnections = true;
+        public StaticNode[] HardLinks;
+
+        public Vector3 position
+        {
+            get
+            {
+                if (worldSpacePosition)
+                    return nodePosition;
+                else if (relativePosition)
+                    return transform.position + nodePosition;
+                else
+                    return transform.position;
+            }
+            set
+            {
+                if (worldSpacePosition)
+                    nodePosition = value;
+                else if (relativePosition)
+                    nodePosition = value - transform.position;
+                else
+                    transform.position = value;
+            }
+        }
 
         private void OnEnable()
         {
@@ -38,39 +60,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         private void OnDestroy()
         {
             StaticNodes.Remove(this);
-        }
-        private void Update()
-        {
-            if (!overridePosition)
-                position = transform.position;
-
-            if (Vector3.Distance(lastPosition, position) > 0.1f)
-            {
-                lastPosition = position;
-                try
-                {
-                    var ggb = Resources.FindObjectsOfTypeAll<GroundGraphBuilder>()[0];
-                    ggb.rebuild = true;
-                }
-                catch { }
-            }
-        }
-
-        void OnDrawGizmos()
-        {
-            if (!drawGizmo) return;
-            if (!mesh)
-            {
-                var filter = GameObject
-                    .CreatePrimitive(PrimitiveType.Cube)
-                    .GetComponent<MeshFilter>();
-                mesh = filter.sharedMesh;
-                DestroyImmediate(filter.gameObject);
-            }
-
-            Gizmos.matrix = Matrix4x4.TRS(position - Vector3.up * 0.5f, Quaternion.identity, Vector3.one * 2);
-            Gizmos.color = staticNodeColor;
-            Gizmos.DrawMesh(mesh);
         }
     }
 }

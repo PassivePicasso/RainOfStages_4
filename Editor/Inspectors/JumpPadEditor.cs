@@ -35,41 +35,7 @@ namespace PassivePicasso.RainOfStages.Designer
         private void OnSceneGUI()
         {
             JumpPad jumpPad = (JumpPad)target;
-            bool updateTrajectory = false;
 
-            EditorGUI.BeginChangeCheck();
-            Vector3 newTargetPosition = jumpPad.destination;
-            using (new Handles.DrawingScope(jumpPad.destinationNode.staticNodeColor))
-            {
-                var changedPosition = Handles.Slider(newTargetPosition, Vector3.up, 1f, Handles.CylinderHandleCap, 0.1f);
-                if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
-                {
-                    Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                    if (Physics.Raycast(mouseRay, out var hitInfo, float.MaxValue))
-                    {
-                        newTargetPosition = hitInfo.point;
-                        Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
-                        jumpPad.destination = newTargetPosition;
-                        updateTrajectory = true;
-                    }
-                }
-            }
-            newTargetPosition = jumpPad.transform.position;
-            using (new Handles.DrawingScope(jumpPad.originNode.staticNodeColor))
-            {
-                var changedPosition = Handles.Slider(newTargetPosition, Vector3.up, 1f, Handles.CylinderHandleCap, 0.1f);
-                if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
-                {
-                    Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                    if (Physics.Raycast(mouseRay, out var hitInfo, float.MaxValue, LayerIndex.world.mask))
-                    {
-                        newTargetPosition = hitInfo.point;
-                        Undo.RecordObject(jumpPad, "Change JumpPad Target Position");
-                        jumpPad.transform.position = newTargetPosition;
-                        updateTrajectory = true;
-                    }
-                }
-            }
             if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.F)
             {
                 Event.current.Use();
@@ -79,7 +45,7 @@ namespace PassivePicasso.RainOfStages.Designer
                 SceneView.currentDrawingSceneView.Frame(bounds);
             }
 
-            if (updateTrajectory || lastPosition != jumpPad.transform.position || lastTime != jumpPad.time)
+            if (lastPosition != jumpPad.transform.position || lastTime != jumpPad.time)
             {
                 lastPosition = jumpPad.transform.position;
                 lastTime = jumpPad.time;
@@ -95,7 +61,7 @@ namespace PassivePicasso.RainOfStages.Designer
             EditorGUILayout.BeginVertical();
             EditorGUILayout.LabelField($"Pad: {jumpPad.transform.position}");
             EditorGUILayout.LabelField($"Peak: {peak}");
-            EditorGUILayout.LabelField($"Target: {newTargetPosition}");
+            EditorGUILayout.LabelField($"Target: {jumpPad.destination}");
             EditorGUILayout.LabelField($"Impact Velocity: {impactVelocity}");
             EditorGUILayout.LabelField($"Vertical Impact Velocity: {verticalImpactVelocity }");
 
