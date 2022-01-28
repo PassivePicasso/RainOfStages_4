@@ -212,10 +212,11 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         {
             var resultsIndices = new List<int>();
             int nextLinkSetIndex = 0;
-
+            uint linkCount = 0;
             Profiler.BeginSample("Construct node links");
             for (int i = 0; i < nodes.Count; i++)
             {
+                var node = nodes[i];
                 if (i < staticNodes.Count)
                 {
                     var staticNode = staticNodes[i];
@@ -232,10 +233,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         });
                     }
                     if (!staticNode.allowDynamicConnections || !staticNode.allowOutboundConnections)
+                    {
+                        linkCount = (uint)Mathf.Max(0, links.Count - nextLinkSetIndex);
+                        node.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = linkCount };
+                        nodes[i] = node;
+                        nextLinkSetIndex += (int)linkCount;
                         continue;
+                    }
                 }
 
-                var node = nodes[i];
                 resultsIndices.Clear();
                 //Find nodes within link range
                 query.Radius(pointTree, nodes[i].position, linkDistance, resultsIndices);
@@ -301,7 +307,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     nodes[i] = a;
                     nodes[nni] = b;
                 }
-                uint linkCount = (uint)Mathf.Max(0, links.Count - nextLinkSetIndex);
+                linkCount = (uint)Mathf.Max(0, links.Count - nextLinkSetIndex);
                 node.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = linkCount };
                 nodes[i] = node;
                 nextLinkSetIndex += (int)linkCount;
