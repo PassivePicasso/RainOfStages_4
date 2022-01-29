@@ -20,25 +20,31 @@ namespace PassivePicasso.RainOfStages.Proxy
         public bool DebugTeleporterOk;
         [SerializeField]
         public bool DebugLinks;
-        public float DebugLinkVerticalOffset;
+        public float DebugLinkVerticalOffset = 3.525f;
+        public float arrowSize = 1f;
+        public float arrowOffset = .51f;
+        public bool percentageOffset = true;
+
         [SerializeField]
         public bool DebugNodes;
-        
+
+
         [SerializeField]
         public bool DebugAirLinks;
         [SerializeField]
         public bool DebugAirNodes;
-        public Color HumanColor = Color.white;
+        public Color HumanColor = Color.green;
         public Color GolemColor = Color.blue;
         public Color QueenColor = Color.red;
-        public Color NoCeilingColor = Color.green;
+        public Color LinkMultiplier = new Color(.75f, .75f, .75f, 1f);
+        public Color NoCeilingColor = Color.cyan;
         public Color TeleporterOkColor = Color.yellow;
 
         private Dictionary<HullMask, Color> colormap;
 
 #if UNITY_EDITOR
 
-        void OnRenderObject()
+        Material GetDebugMaterial(bool nodes = false)
         {
             var sceneView = SceneView.lastActiveSceneView;
             Material material = null;
@@ -46,18 +52,25 @@ namespace PassivePicasso.RainOfStages.Proxy
             {
                 case DrawCameraMode.Textured:
                 case DrawCameraMode.Wireframe:
-                    material = new Material(Shader.Find("Hidden/GIDebug/VertexColors"));
-                    break;
                 case DrawCameraMode.TexturedWire:
-                    material = new Material(Shader.Find("Custom/ProjectorAdditiveTint"));
+                    if (nodes)
+                        material = AssetDatabase.FindAssets("t:Material NodeMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
+                    else
+                        material = AssetDatabase.FindAssets("t:Material LinkMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
                     break;
                 case DrawCameraMode.Overdraw:
                     material = new Material(Shader.Find("Hidden/UI/Overdraw"));
                     break;
                 default:
-                    return;
+                    material = new Material(Shader.Find("Hidden/GIDebug/VertexColors"));
+                    break;
             }
             material.SetPass(0);
+
+            return material;
+        }
+        void OnRenderObject()
+        {
 
             var masks = new[] { HullMask.BeetleQueen, HullMask.Golem, HullMask.Human };
             if (colormap == null)
@@ -84,6 +97,7 @@ namespace PassivePicasso.RainOfStages.Proxy
                 var airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
                 if (DebugAirLinks)
                 {
+                    var material = GetDebugMaterial();
                     var airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
                     GL.PushMatrix();
                     GL.Begin(GL.LINES);
@@ -118,6 +132,7 @@ namespace PassivePicasso.RainOfStages.Proxy
                 }
                 if (DebugAirNodes)
                 {
+                    GetDebugMaterial(true);
                     GL.PushMatrix();
                     GL.Begin(GL.TRIANGLES);
                     foreach (var node in airNodes)
@@ -152,47 +167,7 @@ namespace PassivePicasso.RainOfStages.Proxy
             if (!groundNodeGraph) return;
             var groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
 
-            GL.PushMatrix();
-            GL.Begin(GL.LINES);
-            if (DebugLinks)
-            {
-                var groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
-                foreach (var link in groundLinks)
-                {
-                    foreach (var mask in masks)
-                        if (((HullMask)link.hullMask).HasFlag(mask))
-                        {
-                            try
-                            {
-                                var color = colormap[mask];
-                                GL.Color(color);
-
-                                NodeGraph.Node nodeA = groundNodes[link.nodeIndexA.nodeIndex];
-                                NodeGraph.Node nodeB = groundNodes[link.nodeIndexB.nodeIndex];
-                                Vector3 nodeAPos = nodeA.position + Vector3.up * DebugLinkVerticalOffset;
-                                Vector3 nodeBPos = nodeB.position + Vector3.up * DebugLinkVerticalOffset;
-                                var displacement = nodeBPos - nodeAPos;
-                                var linkDirection = displacement.normalized;
-
-                                var nodeAModA = nodeAPos + Vector3.up * 3;
-                                var nodeAModB = nodeAPos + (linkDirection * 3);
-
-                                GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
-                                GL.Vertex3(nodeAPos.x, nodeAPos.y + 3, nodeAPos.z);
-
-                                GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
-                                GL.Vertex3(nodeBPos.x, nodeBPos.y, nodeBPos.z);
-
-                                GL.Vertex3(nodeAModA.x, nodeAModA.y, nodeAModA.z);
-                                GL.Vertex3(nodeAModB.x, nodeAModB.y, nodeAModB.z);
-                            }
-                            catch { }
-                            break;
-                        }
-                }
-            }
-            GL.End();
-            GL.PopMatrix();
+            GetDebugMaterial(true);
 
             foreach (var node in groundNodes)
             {
@@ -243,7 +218,88 @@ namespace PassivePicasso.RainOfStages.Proxy
                     GL.End();
                     GL.PopMatrix();
                 }
+                //SceneView.currentDrawingSceneView.camera.world
             }
+
+            if (DebugLinks)
+            {
+                GetDebugMaterial(false);
+                GL.PushMatrix();
+                GL.Begin(GL.LINES);
+                var groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
+                foreach (var link in groundLinks)
+                {
+                    foreach (var mask in masks)
+                        if (((HullMask)link.hullMask).HasFlag(mask))
+                        {
+                            try
+                            {
+                                var color = colormap[mask];
+                                GL.Color(color * LinkMultiplier);
+
+                                NodeGraph.Node nodeA = groundNodes[link.nodeIndexA.nodeIndex];
+                                NodeGraph.Node nodeB = groundNodes[link.nodeIndexB.nodeIndex];
+                                Vector3 nodeAPos = nodeA.position;
+                                Vector3 nodeBPos = nodeB.position;
+                                var displacement = nodeBPos - nodeAPos;
+                                var linkDirection = displacement.normalized;
+
+                                const float arrowHeight = 1f;
+                                var nodeAModA = nodeAPos + (linkDirection * 1) + Vector3.up * arrowHeight;
+                                var nodeAModB = nodeAPos + (linkDirection * 2);
+
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y, nodeAPos.z);
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y + DebugLinkVerticalOffset, nodeAPos.z);
+
+                                GL.Vertex3(nodeAPos.x, nodeAPos.y + DebugLinkVerticalOffset, nodeAPos.z);
+                                GL.Vertex3(nodeBPos.x, nodeBPos.y + DebugLinkVerticalOffset, nodeBPos.z);
+                            }
+                            catch { }
+                            break;
+                        }
+                }
+                GL.End();
+                GL.Begin(GL.TRIANGLES);
+                foreach (var link in groundLinks)
+                {
+                    foreach (var mask in masks)
+                        if (((HullMask)link.hullMask).HasFlag(mask))
+                        {
+                            try
+                            {
+                                var color = colormap[mask];
+                                GL.Color(color * LinkMultiplier);
+
+                                NodeGraph.Node nodeA = groundNodes[link.nodeIndexA.nodeIndex];
+                                NodeGraph.Node nodeB = groundNodes[link.nodeIndexB.nodeIndex];
+                                Vector3 nodeAPos = nodeA.position;
+                                Vector3 nodeBPos = nodeB.position;
+                                var displacement = nodeBPos - nodeAPos;
+                                var linkDirection = displacement.normalized;
+
+                                float halfArrowWidth = arrowSize / 2;
+
+                                var offset = percentageOffset ? Mathf.Clamp(arrowOffset, 0, 1) * displacement.magnitude : arrowOffset;
+                                var nodeAModA = nodeAPos + (linkDirection * offset);
+                                var nodeAModB = nodeAPos + (linkDirection * (offset + arrowSize));
+
+                                var linkCross = Vector3.Cross(linkDirection, Vector3.up).normalized;
+
+                                var a = nodeAModA + (linkCross * halfArrowWidth);
+                                var b = nodeAModA - (linkCross * halfArrowWidth);
+
+                                GL.Vertex3(a.x, a.y + DebugLinkVerticalOffset, a.z);
+                                GL.Vertex3(b.x, b.y + DebugLinkVerticalOffset, b.z);
+                                GL.Vertex3(nodeAModB.x, nodeAModB.y + DebugLinkVerticalOffset, nodeAModB.z);
+                            }
+                            catch { }
+                            break;
+                        }
+                }
+                GL.End();
+                GL.PopMatrix();
+            }
+
         }
 
 
