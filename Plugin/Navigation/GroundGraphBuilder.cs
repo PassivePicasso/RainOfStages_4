@@ -30,6 +30,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public float nodeSeparation;
         public float linkDistance;
         public float floorForgiveness = 0f;
+        public bool surfaceNodePositions;
 
         [SerializeField, HideInInspector] private float lastMargin;
         [SerializeField, HideInInspector] private Vector3 lastTargetNormal;
@@ -186,6 +187,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private Vector3 SurfacePosition(Vector3 position)
         {
+            if (!surfaceNodePositions) return position;
             Profiler.BeginSample("Surfacing Position");
             if (Physics.RaycastNonAlloc(position, Vector3.up, hitArray, QueenHull.height, LayerIndex.world.mask) == 0)
             {
@@ -265,31 +267,26 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var maxDist = Vector3.Distance(a.position, b.position);
                     Vector3 direction = (b.position - a.position).normalized;
 
-                    var testStart = a.position + Vector3.up;
-                    var testStop = b.position + Vector3.up;
+                    var testStart = a.position + Vector3.up * floorForgiveness;
+                    var testStop = b.position + Vector3.up * floorForgiveness;
                     var isValid = true;
                     for (float tf = 0; tf <= 1f; tf += 1f / 5f)
                     {
                         var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                        if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, floorForgiveness + 1) == 0)
+                        if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, (floorForgiveness * 2) + 1) == 0)
                         {
                             isValid = false;
                             break;
                         }
                     }
                     if (Physics.RaycastNonAlloc(testStart, direction, hitArray, maxDist) > 0)
-                    {
                         isValid = false;
-                        break;
-                    }
 
                     if (!isValid)
                     {
                         skipped++;
                         continue;
                     }
-
-
 
                     var mask = (AllHulls ^ (b.forbiddenHulls | a.forbiddenHulls));
                     links.Add(new Link
@@ -307,8 +304,14 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     nodes[i] = a;
                     nodes[nni] = b;
                 }
+
                 linkCount = (uint)Mathf.Max(0, links.Count - nextLinkSetIndex);
                 node.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = linkCount };
+
+                if (linkCount == 0)
+                {
+                    node.flags |= NodeFlags.NoCharacterSpawn;
+                }
                 nodes[i] = node;
                 nextLinkSetIndex += (int)linkCount;
             }
@@ -319,12 +322,12 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         {
             int steps = footprintSteps;
             float degrees = 360f / (float)steps;
-            var referenceOriginA = Vector3.forward * radius;
+            var direction = Vector3.forward * radius;
+            var rotation = Quaternion.AngleAxis(degrees, Vector3.up);
             for (int index = 0; index < steps; ++index)
             {
-                var rotation = Quaternion.AngleAxis(degrees * (float)index, Vector3.up);
-                var stepOffset = rotation * referenceOriginA;
-                var ray = new Ray(position + stepOffset + (Vector3.up * height), Vector3.down);
+                direction = rotation * direction;
+                var ray = new Ray(position + direction + (Vector3.up * height * 0.5F), Vector3.down);
                 if (Physics.RaycastNonAlloc(ray, hitArray, height + (1 + floorForgiveness), LayerIndex.world.mask) == 0)
                     return false;
             }
