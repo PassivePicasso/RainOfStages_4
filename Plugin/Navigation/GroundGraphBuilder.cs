@@ -267,19 +267,22 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var maxDist = Vector3.Distance(a.position, b.position);
                     Vector3 direction = (b.position - a.position).normalized;
 
-                    var testStart = a.position + Vector3.up * floorForgiveness;
-                    var testStop = b.position + Vector3.up * floorForgiveness;
+                    var testStart = a.position + Vector3.up * HumanHeight;
+                    var testStop = b.position + Vector3.up * HumanHeight;
                     var isValid = true;
                     for (float tf = 0; tf <= 1f; tf += 1f / 5f)
                     {
                         var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                        if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, (floorForgiveness * 2) + 1) == 0)
+                        if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, HumanHeight * 2 + 1) == 0)
                         {
                             isValid = false;
                             break;
                         }
                     }
-                    if (Physics.RaycastNonAlloc(testStart, direction, hitArray, maxDist) > 0)
+                    if (Physics.SphereCastNonAlloc(testStart, HumanHull.radius, direction, hitArray, maxDist) > 0)
+                        isValid = false;
+
+                    if (Physics.SphereCastNonAlloc(testStop, HumanHull.radius, -direction, hitArray, maxDist) > 0)
                         isValid = false;
 
                     if (!isValid)
