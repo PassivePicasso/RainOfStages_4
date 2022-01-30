@@ -1,15 +1,7 @@
-﻿using DataStructures.ViliWonka.KDTree;
-using RoR2;
+﻿using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using static RoR2.Navigation.NodeGraph;
-using UnityEngine.SceneManagement;
-using UnityEngine.Profiling;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
@@ -63,5 +55,35 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         protected readonly List<int> resultsIndices = new List<int>();
 
+        public bool rebuild;
+
+        private void Update()
+        {
+            if (rebuild)
+            {
+                try
+                {
+                    Build();
+                }
+                finally
+                {
+                    rebuild = false;
+                }
+            }
+        }
+
+        public abstract void Build();
+
+        protected void InitializeSeed(int seed)
+        {
+            if (seed == -1)
+            {
+                Random.InitState((int)Time.realtimeSinceStartup);
+            }
+            else
+            {
+                Random.InitState(seed);
+            }
+        }
     }
 }

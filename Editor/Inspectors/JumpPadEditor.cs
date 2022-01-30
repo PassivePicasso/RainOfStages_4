@@ -15,6 +15,7 @@ namespace PassivePicasso.RainOfStages.Designer
         float impactVelocity;
         float verticalImpactVelocity;
         Vector3 lastPosition;
+        Vector3 lastDestination;
         float lastTime;
 
         public override void OnInspectorGUI()
@@ -45,8 +46,9 @@ namespace PassivePicasso.RainOfStages.Designer
                 SceneView.currentDrawingSceneView.Frame(bounds);
             }
 
-            if (lastPosition != jumpPad.transform.position || lastTime != jumpPad.time)
+            if (lastDestination != jumpPad.destination || lastPosition != jumpPad.transform.position || lastTime != jumpPad.time)
             {
+                lastDestination = jumpPad.destination;
                 lastPosition = jumpPad.transform.position;
                 lastTime = jumpPad.time;
                 trajectoryPoints = jumpPad.Trajectory().ToArray();

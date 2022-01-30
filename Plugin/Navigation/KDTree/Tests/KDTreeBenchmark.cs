@@ -196,7 +196,6 @@ namespace DataStructures.ViliWonka.Tests {
             stopwatch.Start();
 
             Vector3 position = Vector3.one * 0.5f + Random.insideUnitSphere;
-            float radius = 0.25f;
 
             results.Clear();
             query.ClosestPoint(tree, position, results);

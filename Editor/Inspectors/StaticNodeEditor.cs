@@ -20,17 +20,20 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                 if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
                 {
                     Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                    if (Physics.RaycastNonAlloc(mouseRay, raycastHits, float.MaxValue, LayerIndex.world.mask) > 0)
+                    if (Physics.RaycastNonAlloc(mouseRay, raycastHits, float.MaxValue) > 0)
                     {
-                        var hitInfo = raycastHits
-                            .Where(hit => hit.collider != null)
-                            .OrderBy(hit => hit.distance)
+                        var hitsByDistance = raycastHits
+                                                    .Where(hit => hit.collider != null)
+                                                    .OrderBy(hit => hit.distance)
+                                                   .ToArray();
+                        var hitInfo = hitsByDistance
                             .FirstOrDefault(hit => !hit.collider.transform.IsChildOf(staticNode.transform));
 
                         if (hitInfo.collider != null)
                         {
                             Undo.RecordObject(staticNode.gameObject, $"(StaticNode) Change {staticNode.name} Position");
                             staticNode.position = hitInfo.point;
+                            serializedObject.ApplyModifiedProperties();
                         }
                     }
                 }

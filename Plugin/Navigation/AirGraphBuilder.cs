@@ -22,89 +22,19 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public List<NavigationProbe> Probes = new List<NavigationProbe>();
 
         private Material gizmoMaterial;
-        private void Start() => Load();
-        private void Update() => Load();
-        protected Vector3 TryGetPoint(NavigationProbe probe, KDQuery query, KDTree pointTree, out bool failed)
-        {
-            var point = Random.insideUnitSphere * probe.distance;
-            var np = probe.transform.TransformPoint(point);
-            var dir = (np - probe.transform.position).normalized;
-            var dist = Vector3.Distance(probe.transform.position, np);
-            if (Physics.RaycastNonAlloc(probe.transform.position, dir, hitArray, dist, LayerIndex.world.mask) > 0)
-            {
-                failed = true;
-                return Vector3.zero;
-            }
 
-            if (pointTree.Count > 0)
-            {
-                resultsIndices.Clear();
-                query.Radius(pointTree, point, probe.nodeSeparation, resultsIndices);
-                if (resultsIndices.Any())
-                {
-                    failed = true;
-                    return Vector3.zero;
-                }
-            }
-
-            failed = false;
-            return point;
-        }
-
-        protected bool TryAddLink(ref Node a, ref Node b, int nodeAIndex, int nodeBIndex, List<Link> links)
-        {
-            var maxDist = Vector3.Distance(a.position, b.position);
-            Vector3 direction = (b.position - a.position).normalized;
-
-            var mask = HullMask.None;
-
-            //construct Hull Traversal mask
-            var humanCapsule = HumanCapsule(a.position + (Vector3.down * HumanHeight / 2));
-            var golemCapsule = GolemCapsule(a.position + (Vector3.down * GolemHeight / 2));
-            var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
-
-            if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
-            {
-                mask |= HullMask.Human;
-                if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
-                {
-                    mask |= HullMask.Golem;
-                    if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
-                        mask |= HullMask.BeetleQueen;
-                }
-            }
-
-            if (mask == HullMask.None) return false;
-
-            //Set node forbiddenHulls
-            b.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
-
-            links.Add(new Link
-            {
-                distanceScore = Mathf.Sqrt((b.position - a.position).sqrMagnitude),
-                nodeIndexA = new NodeIndex(nodeAIndex),
-                nodeIndexB = new NodeIndex(nodeBIndex),
-                hullMask = (int)mask,
-                jumpHullMask = (int)mask,
-                maxSlope = 90
-            });
-
-            return true;
-        }
-        void Load()
+        public override void Build()
         {
             Probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
-            bool rebuild = false;
+            var updateLinks = false;
             foreach (var probe in Probes)
             {
-                if (!probe.isDirty) continue;
+                if (!rebuild && !probe.isDirty) continue;
                 try
                 {
-                    rebuild = true;
-                    if (probe.seed == -1)
-                        Random.InitState((int)Time.realtimeSinceStartup);
-                    else
-                        Random.InitState(probe.seed);
+                    updateLinks = true;
+                    InitializeSeed(probe.seed);
+
                     var pointTree = new KDTree(16);
                     var query = new KDQuery(probe.targetPointCount);
                     var fails = 0;
@@ -120,8 +50,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                             fails = 0;
                         }
 
-                        var point = TryGetPoint(probe, query, pointTree, out bool failed);
-                        if (failed)
+                        if (!TryGetPoint(probe, query, pointTree, out var point))
                         {
                             fails++;
                             continue;
@@ -137,10 +66,85 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     probe.isDirty = false;
                 }
             }
-            if (rebuild)
+            if (updateLinks)
                 LinkGlobalNodes();
         }
 
+        protected bool TryGetPoint(NavigationProbe probe, KDQuery query, KDTree pointTree, out Vector3 position)
+        {
+            position = Random.insideUnitSphere * probe.distance;
+            var np = probe.transform.TransformPoint(position);
+            var dir = (np - probe.transform.position).normalized;
+            var dist = Vector3.Distance(probe.transform.position, np);
+
+            if (pointTree.Count > 0)
+            {
+                resultsIndices.Clear();
+                query.Radius(pointTree, np, probe.nodeSeparation, resultsIndices);
+                //Nodes in separation radius
+                if (resultsIndices.Any())
+                    return false;
+            }
+
+            //Line of sight to probe check
+            if (Physics.RaycastNonAlloc(probe.transform.position, dir, hitArray, dist, LayerIndex.world.mask) > 0)
+            {
+                return false;
+            }
+
+            //Too close check
+            int overlaps = Physics.OverlapSphereNonAlloc(np, HumanHeight, colliders, LayerIndex.world.mask);
+            if (overlaps > 0)
+                return false;
+
+            //too far check
+            overlaps = Physics.OverlapSphereNonAlloc(np, QueenHeight + 2, colliders, LayerIndex.world.mask);
+            if (overlaps <= 0)
+                return false;
+
+            return true;
+        }
+
+        protected bool TryAddLink(ref Node a, ref Node b, int nodeAIndex, int nodeBIndex, List<Link> links)
+        {
+            Profiler.BeginSample("TryAddLink");
+            var maxDist = Vector3.Distance(a.position, b.position);
+            Vector3 direction = (b.position - a.position).normalized;
+
+            var mask = HullMask.None;
+
+            //construct Hull Traversal mask
+            var humanCapsule = HumanCapsule(a.position + (Vector3.down * HumanHeight / 2));
+            var golemCapsule = GolemCapsule(a.position + (Vector3.down * GolemHeight / 2));
+            var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
+
+            if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                mask = AllHulls;
+            else
+            if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                mask = AllHulls ^ HullMask.BeetleQueen;
+            else
+            if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius, direction, hitArray, maxDist, LayerIndex.world.mask) == 0)
+                mask = HullMask.Human;
+
+            if (mask == HullMask.None) return false;
+
+            //Set node forbiddenHulls
+            b.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
+
+            links.Add(new Link
+            {
+                distanceScore = Mathf.Sqrt((b.position - a.position).sqrMagnitude),
+                nodeIndexA = new NodeIndex(nodeAIndex),
+                nodeIndexB = new NodeIndex(nodeBIndex),
+                hullMask = (int)mask,
+                jumpHullMask = (int)mask,
+                maxSlope = 90
+            });
+            Profiler.EndSample();
+
+            return true;
+        }
 
         public void LinkGlobalNodes()
         {
@@ -206,41 +210,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     continue;
                 }
 
-                // for all nodes within link range of current node, verify line of sight exists between both nodes
-                //var canReach = false;
-                //foreach (var index in resultsIndices)
-                //{
-                //    var otherPosition = nodePoints[index];
-                //    var direction = (position - otherPosition).normalized;
-                //    var distance = Vector3.Distance(position, otherPosition);
-                //    if (Physics.RaycastNonAlloc(otherPosition, direction, hitArray, distance, LayerIndex.world.mask) <= 0)
-                //    {
-                //        canReach = true;
-                //        break;
-                //    }
-                //}
-                //if (!canReach)
-                //{
-                //    Remove(ref i);
-                //    continue;
-                //}
                 //no ceiling check
                 var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.world.mask) > 0;
 
-                //Too close check
-                var overlaps = Physics.OverlapSphereNonAlloc(position, probe.minimumSurfaceDistance, colliders, LayerIndex.world.mask);
-                if (overlaps > 0)
-                {
-                    Remove(ref i);
-                    continue;
-                }
-                //too far check
-                var withinDistance = Physics.OverlapSphereNonAlloc(position, probe.maximumSurfaceDistance, colliders, LayerIndex.world.mask);
-                if (withinDistance <= 0)
-                {
-                    Remove(ref i);
-                    continue;
-                }
                 nodes.Add(new Node
                 {
                     //no shrines or chests in air
@@ -297,12 +269,16 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 #else
             var nodeGraph = (NodeGraph)nodeGraphAssetField.GetValue(sceneInfo);
 #endif
+#if UNITY_EDITOR
             var isNew = false;
+#endif
             if (!nodeGraph)
             {
                 nodeGraph = ScriptableObject.CreateInstance<NodeGraph>();
                 nodeGraph.name = graphName;
+#if UNITY_EDITOR
                 isNew = true;
+#endif
             }
 
             NodesField.SetValue(nodeGraph, nodes.ToArray());

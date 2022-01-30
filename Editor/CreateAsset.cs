@@ -89,7 +89,9 @@ namespace PassivePicasso.RainOfStages.Designer
         public static void CreateStage()
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+#pragma warning disable CS0618 // Type or member is obsolete
             var director = new GameObject("Director", typeof(NetworkIdentity), typeof(DirectorCore), typeof(SceneDirector), typeof(CombatDirector), typeof(CombatDirector));
+#pragma warning restore CS0618 // Type or member is obsolete
             var globalEventManager = new GameObject("GlobalEventManager", typeof(Proxy.GlobalEventManager));
 
             var sceneInfo = new GameObject("SceneInfo", typeof(Proxy.SceneInfo), typeof(ClassicStageInfo), typeof(PostProcessVolume));

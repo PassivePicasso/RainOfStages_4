@@ -21,7 +21,7 @@ namespace PassivePicasso.RainOfStages.Behaviours
         public StaticNode destinationNode;
         public bool regenerateStaticNodes = false;
 
-        private void Update()
+        public void Update()
         {
             if (regenerateStaticNodes)
                 foreach (var node in GetComponents<StaticNode>())

@@ -1,39 +1,43 @@
 ﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Designer.Inspectors
 {
-    [CustomEditor(typeof(AirGraphBuilder), true)]
-    public class AirGraphBuilderEditor : UnityEditor.Editor
+    [CustomEditor(typeof(AirGraphBuilder), false)]
+    public class AirGraphBuilderEditor : GraphBuilderEditor
     {
         bool ShowProbes = false;
         Dictionary<AirGraphBuilder, bool[]> probeStates = new Dictionary<AirGraphBuilder, bool[]>();
 
         public override void OnInspectorGUI()
         {
-            var builder = target as AirGraphBuilder;
-            if (!builder) return;
-            if (!probeStates.ContainsKey(builder))
-                probeStates[builder] = new bool[builder.Probes.Count];
+            base.OnInspectorGUI();
+            var airBuilder = this.builder as AirGraphBuilder;
+            if (!airBuilder) return;
+            if (!probeStates.ContainsKey(airBuilder))
+                probeStates[airBuilder] = new bool[airBuilder.Probes.Count];
 
             if (GUILayout.Button("Add Probe"))
             {
-                var probe = new GameObject($"Probe_{builder.Probes.Count}", typeof(NavigationProbe));
-                probe.transform.parent = builder.transform;
-                if (builder.Probes == null) builder.Probes = new List<NavigationProbe>();
-                builder.Probes.Add(probe.GetComponent<NavigationProbe>());
-                var newStates = new bool[builder.Probes.Count];
-                probeStates[builder].CopyTo(newStates, 0);
-                probeStates[builder] = newStates;
+                var name = ObjectNames.GetUniqueName(airBuilder.Probes.Select(p => p.name).ToArray(), "Probe (1)");
+                var probe = Instantiate(airBuilder.Probes.Last());
+                probe.name = name;
+                probe.transform.parent = airBuilder.transform;
+                if (airBuilder.Probes == null) airBuilder.Probes = new List<NavigationProbe>();
+                airBuilder.Probes.Add(probe.GetComponent<NavigationProbe>());
+                var newStates = new bool[airBuilder.Probes.Count];
+                probeStates[airBuilder].CopyTo(newStates, 0);
+                probeStates[airBuilder] = newStates;
             }
             ShowProbes = EditorGUILayout.Foldout(ShowProbes, new GUIContent("Probes"));
             EditorGUI.indentLevel++;
             if (ShowProbes)
-                for (int i = 0; i < builder.Probes.Count; i++)
+                for (int i = 0; i < airBuilder.Probes.Count; i++)
                 {
-                    var probe = builder.Probes[i];
+                    var probe = airBuilder.Probes[i];
                     var probeSo = new SerializedObject(probe);
                     var probeGoSo = new SerializedObject(probe.gameObject);
                     var probeTfSo = new SerializedObject(probe.transform);
@@ -46,13 +50,13 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                     rect.height = EditorGUIUtility.singleLineHeight - 2;
                     if (GUI.Button(rect, "x", EditorStyles.miniButton))
                     {
-                        builder.Probes.RemoveAt(i);
+                        airBuilder.Probes.RemoveAt(i);
                         DestroyImmediate(probe.gameObject);
-                        builder.LinkGlobalNodes();
+                        airBuilder.LinkGlobalNodes();
                         break;
                     }
-                    probeStates[builder][i] = EditorGUILayout.Foldout(probeStates[builder][i], new GUIContent(probe.name));
-                    if (probeStates[builder][i])
+                    probeStates[airBuilder][i] = EditorGUILayout.Foldout(probeStates[airBuilder][i], new GUIContent(probe.name));
+                    if (probeStates[airBuilder][i])
                     {
                         EditorGUI.BeginChangeCheck();
                         SerializedProperty property = probeGoSo.FindProperty("m_Name");
