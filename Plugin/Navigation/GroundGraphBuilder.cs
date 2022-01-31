@@ -144,15 +144,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var testPosition = position + Vector3.up;
                     var mask = HullMask.None;
 
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (QueenHeightOffset / 2), QueenHeight / 2, colliders) == 0
+                    if (Physics.OverlapSphereNonAlloc(testPosition + (QueenHeightOffset / 2), QueenHeight / 2, colliders, LayerIndex.entityPrecise.collisionMask) == 0
                      && FootprintFitsPosition(position, QueenHull.radius, QueenHull.height))
                         mask = AllHulls;
                     else
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (GolemHeightOffset / 2), GolemHeight / 2, colliders) == 0
+                    if (Physics.OverlapSphereNonAlloc(testPosition + (GolemHeightOffset / 2), GolemHeight / 2, colliders, LayerIndex.entityPrecise.collisionMask) == 0
                      && FootprintFitsPosition(position, GolemHull.radius, GolemHull.height))
                         mask = AllHulls ^ HullMask.BeetleQueen;
                     else
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (HumanHeightOffset / 2), HumanHeight / 2, colliders) == 0
+                    if (Physics.OverlapSphereNonAlloc(testPosition + (HumanHeightOffset / 2), HumanHeight / 2, colliders, LayerIndex.entityPrecise.collisionMask) == 0
                      && FootprintFitsPosition(position, HumanHull.radius, HumanHull.height))
                         mask = HullMask.Human;
 
@@ -322,7 +322,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 direction = rotation * direction;
                 var ray = new Ray(position + direction + (Vector3.up * height * 0.5F), Vector3.down);
-                if (Physics.RaycastNonAlloc(ray, hitArray, height + (1 + floorForgiveness), LayerIndex.world.mask) == 0)
+                if (Physics.RaycastNonAlloc(ray, hitArray, height + (1 + floorForgiveness), LayerIndex.entityPrecise.collisionMask) == 0)
                     return false;
             }
             return true;
