@@ -18,16 +18,20 @@ namespace PassivePicasso.RainOfStages.Proxy
         public Vector2 offsetSpeed = Vector2.one * .01f;
         Vector2 offset1 = Vector2.zero, offset2 = Vector2.zero;
         public WindZone windZone;
+        private Vector2 randomDirection;
         // Start is called before the first frame update
         void Start()
         {
+            randomDirection = UnityEngine.Random.insideUnitCircle;
             material = new Material(Shader.Find("Hopoo Games/Environment/Distant Water"));
             material.SetTexture("_Normal1Tex", normalMap);
             material.SetTexture("_Normal2Tex", normalMap);
-            if(useAssetData)
+            if (useAssetData)
                 SetData(material);
             var renderer = gameObject.GetComponent<MeshRenderer>();
             renderer.material = material;
+            if (!windZone)
+                windZone = FindObjectOfType<WindZone>();
         }
 
         private void Update()
@@ -35,8 +39,13 @@ namespace PassivePicasso.RainOfStages.Proxy
             if (!material) return;
 
             offset1 += offsetSpeed * Time.deltaTime;
-            var windDir = new Vector2(windZone.transform.forward.x, windZone.transform.forward.z);
-            offset2 += (windZone ? (windDir * windZone.windMain) : offsetSpeed) * Time.deltaTime;
+            if (windZone)
+            {
+                var windDir = new Vector2(windZone.transform.forward.x, windZone.transform.forward.z);
+                offset2 += windDir * windZone.windMain * Time.deltaTime;
+            }
+            else
+                offset2 += offsetSpeed * Time.deltaTime;
 
             material.SetTextureOffset("_Normal1Tex", offset1);
             material.SetTextureOffset("_Normal2Tex", offset2);
