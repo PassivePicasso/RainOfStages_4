@@ -57,12 +57,10 @@ namespace PassivePicasso.RainOfStages.Proxy
                         material = AssetDatabase.FindAssets("t:Material NodeMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
                     else
                         material = AssetDatabase.FindAssets("t:Material LinkMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
+                    //Hidden/ProBuilder/VertexPicker
                     break;
                 case DrawCameraMode.Overdraw:
                     material = new Material(Shader.Find("Hidden/UI/Overdraw"));
-                    break;
-                default:
-                    material = new Material(Shader.Find("Hidden/GIDebug/VertexColors"));
                     break;
             }
             material.SetPass(0);
@@ -71,7 +69,8 @@ namespace PassivePicasso.RainOfStages.Proxy
         }
         void OnRenderObject()
         {
-
+            var material = GetDebugMaterial();
+            if (!material) return;
             var masks = new[] { HullMask.BeetleQueen, HullMask.Golem, HullMask.Human };
             if (colormap == null)
                 colormap = new Dictionary<HullMask, Color> {
@@ -97,7 +96,6 @@ namespace PassivePicasso.RainOfStages.Proxy
                 var airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
                 if (DebugAirLinks)
                 {
-                    var material = GetDebugMaterial();
                     var airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
                     GL.PushMatrix();
                     GL.Begin(GL.LINES);
