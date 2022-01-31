@@ -13,11 +13,6 @@ namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
 
         public IEnumerable<AssetType> Asset { get; private set; }
 
-        [WeakAssetReference(typeof(Material))]
-        public string[] EditorAssets;
-
-        private string[] lastEditorAssets;
-
         /// <summary>
         /// Full scene path of target asset 
         /// </summary>
