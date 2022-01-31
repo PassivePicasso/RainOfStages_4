@@ -10,8 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6786409798731770341}
   - component: {fileID: 5253772029961079374}
-  - component: {fileID: 4047232620518270279}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: bbBush1
   m_TagString: Untagged
   m_Icon: {fileID: -5487077368411116049, guid: 0000000000000000d000000000000000, type: 0}
@@ -48,20 +47,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RootPrefabPath: prefabs/stagedisplay/BlackbeachDioramaDisplay
   PrefabPath: Foliage/spmBush1 (2)
---- !u!136 &4047232620518270279
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4053018199833485673}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 1.35
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.675, z: 0}
 --- !u!1 &7071527263656108253
 GameObject:
   m_ObjectHideFlags: 0
@@ -73,7 +58,7 @@ GameObject:
   - component: {fileID: 3266584165275607469}
   - component: {fileID: 4185606024976956823}
   - component: {fileID: 7262625807983801548}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -150,7 +135,7 @@ GameObject:
   - component: {fileID: 6459666640787390435}
   - component: {fileID: 8057168361442146811}
   - component: {fileID: 7806140541492473016}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Sphere (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -11,9 +11,8 @@ GameObject:
   - component: {fileID: 3344640302271646999}
   - component: {fileID: 8274436295833529632}
   - component: {fileID: 621431710501556295}
-  - component: {fileID: 6774588015424240125}
-  - component: {fileID: 668273451093178911}
-  m_Layer: 0
+  - component: {fileID: 782208202258224766}
+  m_Layer: 12
   m_Name: PillarRepresentative
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -79,8 +78,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3067169541054559828}
   m_Mesh: {fileID: 4300000, guid: 98e888ea529aecd479888a44ea2d0c03, type: 2}
---- !u!64 &6774588015424240125
-MeshCollider:
+--- !u!136 &782208202258224766
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -89,26 +88,10 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Convex: 0
-  m_CookingOptions: 14
-  m_Mesh: {fileID: 0}
---- !u!208 &668273451093178911
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3067169541054559828}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 0
-  m_Extents: {x: 1, y: 4, z: 1}
-  m_MoveThreshold: 0.1
-  m_Carve: 1
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 4, z: 0}
-  m_TimeToStationary: 0.5
+  m_Radius: 1.2753974
+  m_Height: 7.992083
+  m_Direction: 1
+  m_Center: {x: 0, y: 4.0000067, z: -0.0000012516979}
 --- !u!1 &5346948176375577147
 GameObject:
   m_ObjectHideFlags: 0
@@ -119,7 +102,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5346948176375577150}
   - component: {fileID: 5346948176375577144}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: BbRuinPillar1
   m_TagString: Untagged
   m_Icon: {fileID: -5397416234189338067, guid: 0000000000000000d000000000000000, type: 0}

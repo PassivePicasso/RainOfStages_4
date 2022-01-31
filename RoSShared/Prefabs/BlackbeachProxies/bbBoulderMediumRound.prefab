@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4406122775726190386}
   - component: {fileID: 442575116268929271}
   - component: {fileID: 4547671813844072645}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   m_Component:
   - component: {fileID: 350615368443794735}
   - component: {fileID: 3229939412531964562}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: bbBoulderMediumRound
   m_TagString: Untagged
   m_Icon: {fileID: 0}
