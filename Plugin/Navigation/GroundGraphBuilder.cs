@@ -1,14 +1,10 @@
-﻿#if UNITY_EDITOR
-using UnityEditor;
-#endif
-using DataStructures.ViliWonka.KDTree;
+﻿using DataStructures.ViliWonka.KDTree;
 using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
-using UnityEngine.SceneManagement;
 using static RoR2.Navigation.NodeGraph;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
@@ -81,7 +77,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
 
             LinkNodes(nodes, links, pointTree, query, staticNodes);
-            SaveGraph(nodes, links);
+            Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
         }
 
         private void GenerateNodeData(Transform transform, List<Vector3> nodePoints, List<Node> nodes, List<Triangle> walkableTris, KDTree pointTree, KDQuery query, NavigationProbe[] probes)
@@ -335,54 +331,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 return false;
 
             return FootprintFitsPosition(position, 10, 7f);
-        }
-        private static void SaveGraph(List<Node> nodes, List<Link> links)
-        {
-            Profiler.BeginSample("Save graph changes");
-            var sceneInfo = FindObjectOfType<SceneInfo>();
-            var activeScene = SceneManager.GetActiveScene();
-            var scenePath = activeScene.path;
-            scenePath = System.IO.Path.GetDirectoryName(scenePath);
-            var graphName = $"{activeScene.name}_GroundNodeGraph.asset";
-#if UNITY_EDITOR
-            var nodeGraphPath = System.IO.Path.Combine(scenePath, activeScene.name, graphName);
-            var nodeGraph = AssetDatabase.LoadAssetAtPath<NodeGraph>(nodeGraphPath);
-#else
-            var nodeGraph = (NodeGraph)nodeGraphAssetField.GetValue(sceneInfo);
-#endif
-#if UNITY_EDITOR
-            var isNew = false;
-#endif
-            if (!nodeGraph)
-            {
-                nodeGraph = ScriptableObject.CreateInstance<NodeGraph>();
-                nodeGraph.name = graphName;
-#if UNITY_EDITOR
-                isNew = true;
-#endif
-            }
-
-            NodesField.SetValue(nodeGraph, nodes.ToArray());
-            LinksField.SetValue(nodeGraph, links.ToArray());
-            nodeGraphAssetField.SetValue(sceneInfo, nodeGraph);
-
-#if UNITY_EDITOR
-            if (isNew)
-            {
-                if (!AssetDatabase.IsValidFolder(System.IO.Path.Combine(scenePath, activeScene.name)))
-                    AssetDatabase.CreateFolder(scenePath, activeScene.name);
-
-                AssetDatabase.CreateAsset(nodeGraph, nodeGraphPath);
-                AssetDatabase.Refresh();
-            }
-            else
-            {
-                EditorUtility.SetDirty(nodeGraph);
-                var so = new SerializedObject(nodeGraph);
-                so.ApplyModifiedProperties();
-            }
-#endif
-            Profiler.EndSample();
         }
     }
 }

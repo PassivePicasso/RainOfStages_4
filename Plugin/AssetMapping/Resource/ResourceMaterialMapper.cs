@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
 {
     [ExecuteAlways]
-    public class ResourceMaterialMapper : ResourceAssetArrayMapper<MeshRenderer, Material>
+    public class ResourceMaterialMapper : ResourceAssetArrayMapper<Renderer, Material>
     {
         [SerializeField]
         private static Material[] defaultMaterials;

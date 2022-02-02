@@ -3,9 +3,6 @@ using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
 using System.Linq;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
@@ -20,8 +17,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             typeof(SceneInfo).GetField($"airNodesAsset",
                                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         public List<NavigationProbe> Probes = new List<NavigationProbe>();
-
-        private Material gizmoMaterial;
 
         public override void Build()
         {
@@ -257,82 +252,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
             Profiler.EndSample();
 
-            Profiler.BeginSample("Save Graph Changes");
-            var sceneInfo = FindObjectOfType<SceneInfo>();
-            var activeScene = SceneManager.GetActiveScene();
-            var scenePath = activeScene.path;
-            scenePath = System.IO.Path.GetDirectoryName(scenePath);
-            var graphName = $"{activeScene.name}_airNodeGraph.asset";
-#if UNITY_EDITOR
-            var nodeGraphPath = System.IO.Path.Combine(scenePath, activeScene.name, graphName);
-            var nodeGraph = AssetDatabase.LoadAssetAtPath<NodeGraph>(nodeGraphPath);
-#else
-            var nodeGraph = (NodeGraph)nodeGraphAssetField.GetValue(sceneInfo);
-#endif
-#if UNITY_EDITOR
-            var isNew = false;
-#endif
-            if (!nodeGraph)
-            {
-                nodeGraph = ScriptableObject.CreateInstance<NodeGraph>();
-                nodeGraph.name = graphName;
-#if UNITY_EDITOR
-                isNew = true;
-#endif
-            }
-
-            NodesField.SetValue(nodeGraph, nodes.ToArray());
-            LinksField.SetValue(nodeGraph, links.ToArray());
-            nodeGraphAssetField.SetValue(sceneInfo, nodeGraph);
-
-#if UNITY_EDITOR
-            if (isNew)
-            {
-                if (!AssetDatabase.IsValidFolder(System.IO.Path.Combine(scenePath, activeScene.name)))
-                    AssetDatabase.CreateFolder(scenePath, activeScene.name);
-
-                AssetDatabase.CreateAsset(nodeGraph, nodeGraphPath);
-                AssetDatabase.Refresh();
-            }
-            else
-            {
-                EditorUtility.SetDirty(nodeGraph);
-                var so = new SerializedObject(nodeGraph);
-                so.ApplyModifiedProperties();
-            }
-#endif
-            Profiler.EndSample();
+            Apply(nodeGraphAssetField, $"{gameObject.scene.name}_AirNodeGraph.asset", nodes, links);
         }
-
-#if UNITY_EDITOR
-        void OnRenderObject()
-        {
-            if (!Selection.gameObjects.Contains(gameObject)) return;
-            if (!gizmoMaterial) gizmoMaterial = new Material(Shader.Find("VR/SpatialMapping/Wireframe"));
-            gizmoMaterial.SetPass(0);
-            foreach (var probe in Probes)
-            {
-                GL.PushMatrix();
-                GL.MultMatrix(probe.transform.localToWorldMatrix);
-                GL.Begin(GL.TRIANGLES);
-                try
-                {
-                    GL.Color(Color.green);
-                    for (int i = 0; i < cubeTriangles.Length; i += 3)
-                    {
-                        var a = cubeVertices[cubeTriangles[i + 0]] * 2;
-                        var b = cubeVertices[cubeTriangles[i + 1]] * 2;
-                        var c = cubeVertices[cubeTriangles[i + 2]] * 2;
-                        GL.Vertex3(a.x, a.y, a.z);
-                        GL.Vertex3(b.x, b.y, b.z);
-                        GL.Vertex3(c.x, c.y, c.z);
-                    }
-                }
-                catch { }
-                GL.End();
-                GL.PopMatrix();
-            }
-        }
-#endif
     }
 }

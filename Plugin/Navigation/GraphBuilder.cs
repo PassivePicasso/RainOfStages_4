@@ -1,7 +1,10 @@
 ﻿using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.Profiling;
+using static RoR2.Navigation.NodeGraph;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
@@ -15,6 +18,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public static System.Reflection.FieldInfo LinksField =
             typeof(NodeGraph).GetField("links", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        public NodeGraph nodeGraph;
 
         protected static readonly Vector3[] cubeVertices = new[]
         {
@@ -84,6 +89,23 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 Random.InitState(seed);
             }
+        }
+
+        protected void Apply(FieldInfo nodeGraphAssetField, string graphName, List<Node> nodes, List<Link> links)
+        {
+            Profiler.BeginSample("Save Graph Changes");
+            var sceneInfo = FindObjectOfType<SceneInfo>();
+            nodeGraph = (NodeGraph)nodeGraphAssetField.GetValue(sceneInfo);
+            if (!nodeGraph)
+            {
+                nodeGraph = ScriptableObject.CreateInstance<NodeGraph>();
+                nodeGraph.name = graphName;
+            }
+
+            NodesField.SetValue(nodeGraph, nodes.ToArray());
+            LinksField.SetValue(nodeGraph, links.ToArray());
+            nodeGraphAssetField.SetValue(sceneInfo, nodeGraph);
+            Profiler.EndSample();
         }
     }
 }

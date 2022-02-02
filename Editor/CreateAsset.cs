@@ -94,7 +94,7 @@ namespace PassivePicasso.RainOfStages.Designer
 #pragma warning restore CS0618 // Type or member is obsolete
             var globalEventManager = new GameObject("GlobalEventManager", typeof(Proxy.GlobalEventManager));
 
-            var sceneInfo = new GameObject("SceneInfo", typeof(Proxy.SceneInfo), typeof(ClassicStageInfo), typeof(PostProcessVolume));
+            var sceneInfo = new GameObject("SceneInfo", typeof(RoR2.SceneInfo), typeof(ClassicStageInfo), typeof(PostProcessVolume));
             sceneInfo.layer = LayerIndex.postProcess.intVal;
 
             var combatDirectors = director.GetComponents<CombatDirector>();

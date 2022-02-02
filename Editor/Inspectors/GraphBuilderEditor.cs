@@ -39,11 +39,27 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                     serializedObject.ApplyModifiedProperties();
                 }
             }
-        }
 
-        void OnSceneGUI()
-        {
+            if (builder.nodeGraph)
+                if (!EditorUtility.IsPersistent(builder.nodeGraph))
+                {
+                    var scene = builder.gameObject.scene;
+                    var scenePath = scene.path;
+                    scenePath = System.IO.Path.GetDirectoryName(scenePath);
+                    if (!AssetDatabase.IsValidFolder(System.IO.Path.Combine(scenePath, scene.name)))
+                        AssetDatabase.CreateFolder(scenePath, scene.name);
 
+                    var nodeGraphPath = System.IO.Path.Combine(scenePath, scene.name, builder.nodeGraph.name);
+
+                    AssetDatabase.CreateAsset(builder.nodeGraph, nodeGraphPath);
+                    AssetDatabase.Refresh();
+                }
+                else
+                {
+                    EditorUtility.SetDirty(builder.nodeGraph);
+                    var so = new SerializedObject(builder.nodeGraph);
+                    so.ApplyModifiedProperties();
+                }
         }
     }
 }

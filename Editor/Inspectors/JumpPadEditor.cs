@@ -1,6 +1,4 @@
-#if UNITY_EDITOR
 using PassivePicasso.RainOfStages.Behaviours;
-using RoR2;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -86,4 +84,3 @@ namespace PassivePicasso.RainOfStages.Designer
         }
     }
 }
-#endif
