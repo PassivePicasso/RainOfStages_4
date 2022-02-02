@@ -191,7 +191,7 @@ namespace PassivePicasso.RainOfStages.Designer
             }
         }
 
-        bool CheckedField(System.Action drawField, string label = null)
+        bool CheckedField(Action drawField, string label = null)
         {
             EditorGUI.BeginChangeCheck();
             using (new EditorGUILayout.HorizontalScope())
