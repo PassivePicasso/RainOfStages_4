@@ -173,15 +173,20 @@ namespace PassivePicasso.RainOfStages.Designer
                 colormap[HullMask.BeetleQueen] = QueenColor;
             }
 
-            groundLinkLineMesh = GenerateGroundLinkMesh(LinkMeshType.line, groundNodes, groundLinks);
-            groundLinkArrowMesh = GenerateGroundLinkMesh(LinkMeshType.arrow, groundNodes, groundLinks);
-            groundNodeMesh = GenerateNodeMesh(groundNodes);
+            if (groundNodeGraph)
+            {
+                groundLinkLineMesh = GenerateGroundLinkMesh(LinkMeshType.line, groundNodes, groundLinks);
+                groundLinkArrowMesh = GenerateGroundLinkMesh(LinkMeshType.arrow, groundNodes, groundLinks);
+                groundNodeMesh = GenerateNodeMesh(groundNodes);
+                teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
+                noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
+            }
 
-            airLinkLineMesh = GenerateAirLinkMesh(airNodes, airLinks);
-            airNodeMesh = GenerateNodeMesh(airNodes);
-
-            teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
-            noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
+            if (airNodeGraph)
+            {
+                airLinkLineMesh = GenerateAirLinkMesh(airNodes, airLinks);
+                airNodeMesh = GenerateNodeMesh(airNodes);
+            }
         }
 
         private void Draw(Camera camera)
