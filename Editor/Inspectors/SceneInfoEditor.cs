@@ -1,4 +1,5 @@
-﻿using RoR2;
+﻿using PassivePicasso.RainOfStages.Plugin.Utility;
+using RoR2;
 using RoR2.Navigation;
 using System;
 using System.Collections.Generic;
@@ -92,12 +93,18 @@ namespace PassivePicasso.RainOfStages.Designer
             nodeMaterial = GetDebugMaterial(true);
 
             groundNodeGraph = (NodeGraph)serializedObject.FindProperty("groundNodesAsset").objectReferenceValue;
-            groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
-            groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
+            if (groundNodeGraph)
+            {
+                groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
+                groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
+            }
 
             airNodeGraph = (NodeGraph)serializedObject.FindProperty("airNodesAsset").objectReferenceValue;
-            airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
-            airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
+            if (airNodeGraph)
+            {
+                airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
+                airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
+            }
             RegenerateMeshes();
 
             Camera.onPreCull -= Draw;
@@ -401,10 +408,9 @@ namespace PassivePicasso.RainOfStages.Designer
                 case DrawCameraMode.Wireframe:
                 case DrawCameraMode.TexturedWire:
                     if (nodes)
-                        material = AssetDatabase.FindAssets("t:Material NodeMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
+                        material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "NodeMaterial.mat"));
                     else
-                        material = AssetDatabase.FindAssets("t:Material LinkMaterial").Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Material>).First();
-                    //Hidden/ProBuilder/VertexPicker
+                        material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "LinkMaterial.mat"));
                     break;
                 case DrawCameraMode.Overdraw:
                     material = new Material(Shader.Find("Hidden/UI/Overdraw"));
