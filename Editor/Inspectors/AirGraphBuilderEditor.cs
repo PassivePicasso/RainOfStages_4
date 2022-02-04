@@ -22,8 +22,15 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
 
             if (GUILayout.Button("Add Probe"))
             {
-                var name = ObjectNames.GetUniqueName(airBuilder.Probes.Select(p => p.name).ToArray(), "Probe (1)");
-                var probe = Instantiate(airBuilder.Probes.Last());
+                var names = airBuilder?.Probes?.Select(p => p?.name).Where(p => !string.IsNullOrEmpty(p)).ToArray();
+                var name = ObjectNames.GetUniqueName(names, "Probe (1)");
+                NavigationProbe probe = null;
+
+                if (airBuilder.Probes.Any())
+                    probe = Instantiate(airBuilder.Probes?.Last());
+                else
+                    probe = new GameObject(name, typeof(NavigationProbe)).GetComponent<NavigationProbe>();
+
                 probe.name = name;
                 probe.transform.parent = airBuilder.transform;
                 if (airBuilder.Probes == null) airBuilder.Probes = new List<NavigationProbe>();
