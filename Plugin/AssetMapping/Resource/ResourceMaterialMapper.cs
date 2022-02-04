@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
@@ -12,15 +11,9 @@ namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
         protected override string MemberName => "materials";
 
         [WeakAssetReference(typeof(Material))]
-        public string[] EditorAssets;
+        public string[] EditorAssets = new[] { "81d27759c3eb94140aca5d3a7b549e3e" };
 
 #if UNITY_EDITOR
-        private void Start()
-        {
-            string defaultMaterialGuid = UnityEditor.AssetDatabase.AssetPathToGUID("Packages/twiner-rainofstages/RoSShared/Materials/DefaultMaterial.mat");
-            EditorAssets = new[] { defaultMaterialGuid };
-            //defaultMaterials = new[] { UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Packages/twiner-rainofstages/RainOfStages/RoSShared/Materials/DefaultMaterial.mat") };
-        }
         public override Material[] ClonedAssets
         {
             get
