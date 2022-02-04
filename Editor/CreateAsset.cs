@@ -1,4 +1,5 @@
-﻿using PassivePicasso.RainOfStages.Proxy;
+﻿using PassivePicasso.RainOfStages.Plugin.Utility;
+using PassivePicasso.RainOfStages.Proxy;
 using PassivePicasso.RainOfStages.Utilities;
 using RoR2;
 using System.IO;
@@ -29,17 +30,26 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static void InstallEditorPack()
         {
-            if (--updateWait > 0) return;
-            Debug.Log("Configuring project for Rain of Stages");
             EditorApplication.update -= InstallEditorPack;
+            var graphicsSettingsSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "GraphicsSettings");
+            var graphicsSettingsDest = PathHelper.ProjectPath("ProjectSettings", "GraphicsSettings.asset");
 
-            var rosConfigured = AssetDatabase.IsValidFolder("Assets/RainOfStages");
-            if (rosConfigured) return;
-            if (!AssetDatabase.IsValidFolder("Packages/twiner-rainofstages/RainOfStages/plugins/RainOfStages")) return;
+            var physicsManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "PhysicsManager");
+            var physicsManagerDest = PathHelper.ProjectPath("ProjectSettings", "PhysicsManager.asset");
 
-            AssetDatabase.ImportPackage("Packages/twiner-rainofstages/RainOfStages/plugins/RainOfStages/RainOfStagesEditorPack.unityPackage", false);
+            var tagManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "TagManager");
+            var tagManagerDest = PathHelper.ProjectPath("ProjectSettings", "TagManager.asset");
+
+            FileUtil.ReplaceFile(graphicsSettingsSrc, graphicsSettingsDest);
+            FileUtil.ReplaceFile(physicsManagerSrc, physicsManagerDest);
+            FileUtil.ReplaceFile(tagManagerSrc, tagManagerDest);
+            AssetDatabase.ImportAsset(tagManagerDest, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(physicsManagerDest, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(graphicsSettingsDest, ImportAssetOptions.ForceUpdate);
         }
 
+        #region TagManager
+        #endregion
 
         [MenuItem("Assets/Create/UnlockableDef")]
         public static void CreateUnlockableDef()
