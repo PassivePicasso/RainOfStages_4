@@ -33,19 +33,24 @@ namespace PassivePicasso.RainOfStages.Designer
             EditorApplication.update -= InstallEditorPack;
             var graphicsSettingsSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "GraphicsSettings");
             var graphicsSettingsDest = PathHelper.ProjectPath("ProjectSettings", "GraphicsSettings.asset");
+            FileUtil.ReplaceFile(graphicsSettingsSrc, graphicsSettingsDest);
+            var graphicsSettingsDestInfo = new FileInfo(graphicsSettingsDest);
+            graphicsSettingsDestInfo.LastAccessTime = graphicsSettingsDestInfo.LastWriteTime = System.DateTime.Now;
+            graphicsSettingsDestInfo.Refresh();
 
-            var physicsManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "PhysicsManager");
-            var physicsManagerDest = PathHelper.ProjectPath("ProjectSettings", "PhysicsManager.asset");
+            var physicsManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "DynamicsManager");
+            var physicsManagerDest = PathHelper.ProjectPath("ProjectSettings", "DynamicsManager.asset");
+            FileUtil.ReplaceFile(physicsManagerSrc, physicsManagerDest);
+            var physicsManagerDestInfo = new FileInfo(physicsManagerDest);
+            physicsManagerDestInfo.LastAccessTime = physicsManagerDestInfo.LastWriteTime = System.DateTime.Now;
+            physicsManagerDestInfo.Refresh();
 
             var tagManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "TagManager");
             var tagManagerDest = PathHelper.ProjectPath("ProjectSettings", "TagManager.asset");
-
-            FileUtil.ReplaceFile(graphicsSettingsSrc, graphicsSettingsDest);
-            FileUtil.ReplaceFile(physicsManagerSrc, physicsManagerDest);
             FileUtil.ReplaceFile(tagManagerSrc, tagManagerDest);
-            AssetDatabase.ImportAsset(tagManagerDest, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.ImportAsset(physicsManagerDest, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.ImportAsset(graphicsSettingsDest, ImportAssetOptions.ForceUpdate);
+            var tagManagerDestInfo = new FileInfo(tagManagerDest);
+            tagManagerDestInfo.LastAccessTime = tagManagerDestInfo.LastWriteTime = System.DateTime.Now;
+            tagManagerDestInfo.Refresh();
         }
 
         #region TagManager
