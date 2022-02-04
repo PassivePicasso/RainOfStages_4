@@ -86,7 +86,12 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = navigationProbeColor;
             Gizmos.DrawMesh(mesh);
-            var maxLength = nodePositions.Max(v => v.magnitude);
+            var maxLength = 0f;
+            if (nodePositions.Any())
+                nodePositions.Max(v => v.magnitude);
+            else
+                maxLength = distance;
+
             Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.5f);
             Gizmos.matrix = Matrix4x4.identity;
             Gizmos.DrawSphere(transform.position, maxLength);
