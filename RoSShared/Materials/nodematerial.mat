@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: NodeMaterial
-  m_Shader: {fileID: 4800000, guid: 35e778fba8b2b49a198d8d7cfced67eb, type: 3}
+  m_Shader: {fileID: 4800000, guid: 9f8adb4c84eb46441b585b2ade3475f4, type: 3}
   m_ShaderKeywords: USE_CLOUDS _COLOROVERLAY_ON _DISPLACEMENTMODE_OFF _DISTORTIONQUALITY_HIGH
     _GLOSSYREFLECTIONS_OFF _REFLECTIONTYPE_NONE _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
     _SPECULARHIGHLIGHTS_OFF _SUNDISK_HIGH_QUALITY

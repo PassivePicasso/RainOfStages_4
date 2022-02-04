@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LinkMaterial
-  m_Shader: {fileID: 4800000, guid: 35e778fba8b2b49a198d8d7cfced67eb, type: 3}
+  m_Shader: {fileID: 4800000, guid: 9f8adb4c84eb46441b585b2ade3475f4, type: 3}
   m_ShaderKeywords: USE_CLOUDS _ALPHABLEND_ON _COLOROVERLAY_ON _DISPLACEMENTMODE_OFF
     _DISTORTIONQUALITY_HIGH _EMISSION _GLOSSYREFLECTIONS_OFF _REFLECTIONTYPE_NONE
     _SPECULARHIGHLIGHTS_OFF _SUNDISK_HIGH_QUALITY
@@ -460,7 +460,7 @@ Material:
     m_Colors:
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}
     - _ClipRect: {r: -32767, g: -32767, b: 32767, a: 32767}
-    - _Color: {r: 0, g: 1, b: 0, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _ColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
     - _CritColor: {r: 1, g: 1, b: 1, a: 1}
     - _CubeColor: {r: 1, g: 1, b: 1, a: 1}

@@ -1,16 +1,16 @@
-﻿Shader "Custom/vertColor"
+﻿Shader "RainOfStages/VertexColor"
 {
     Properties
     {
-		_Color ("Main Color", Vector) = (0.5,0.5,0.5,1)
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "Queue" = "Transparent" "RenderType"="Transparent" }
         LOD 200
 
         Pass
         {
+            Blend SrcAlpha OneMinusSrcAlpha
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
@@ -28,7 +28,6 @@
                 float4 vertex : SV_POSITION;
                 float4 col : COLOR0;
             };
-            float4 _Color;
 
             FragInput Vert(appdata _input)
             {
@@ -37,12 +36,10 @@
                 _output.col = _input.col;
                 return _output;
             }
+
             float4 Frag(FragInput _input) : SV_Target
             {
-                float4 c = _input.col;
-                c.a = 1.f;
-                c *= _Color;
-                return c;
+                return _input.col;
             }
             ENDHLSL
         }
