@@ -20,12 +20,11 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public int seed = -1;
         public MeshFilter[] meshFilters;
         public int pointCount = 1000;
-        public Vector3 TargetNormal;
-        public float Margin;
-        public float nodeSeparation;
-        public float linkDistance;
-        public float floorForgiveness = 0f;
-        public bool surfaceNodePositions;
+        public Vector3 TargetNormal = Vector3.up;
+        public float Margin = 0.4f;
+        public float nodeSeparation = 8;
+        public float linkDistance = 16;
+        public float floorForgiveness = 1f;
 
         [SerializeField, HideInInspector] private float lastMargin;
         [SerializeField, HideInInspector] private Vector3 lastTargetNormal;
@@ -184,7 +183,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private Vector3 SurfacePosition(Vector3 position)
         {
-            if (!surfaceNodePositions) return position;
             Profiler.BeginSample("Surfacing Position");
             if (Physics.RaycastNonAlloc(position, Vector3.up, hitArray, QueenHull.height, LayerIndex.world.mask) == 0)
             {
