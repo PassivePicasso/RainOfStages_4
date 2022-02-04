@@ -175,17 +175,6 @@ namespace PassivePicasso.RainOfStages.Plugin
 
         private void RegisterAsProvider(ContentManager.AddContentPackProviderDelegate addContentPackProvider) => addContentPackProvider(this);
 
-        private void LoadRoSShared()
-        {
-            var assemblyLocation = Info.Location;
-            var workingDirectory = Path.GetDirectoryName(assemblyLocation);
-            var file = new FileInfo(Path.Combine(workingDirectory, "rosshared.manifest"));
-            var directory = file.DirectoryName;
-            var filename = Path.GetFileNameWithoutExtension(file.FullName);
-            var abmPath = Path.Combine(directory, filename);
-            RoSShared = AssetBundle.LoadFromFile(abmPath);
-        }
-
         public static string Hash(byte[] bytes)
         {
             using (var md5 = MD5.Create())
@@ -263,7 +252,6 @@ namespace PassivePicasso.RainOfStages.Plugin
         public System.Collections.IEnumerator LoadStaticContentAsync(LoadStaticContentAsyncArgs args)
         {
             float progress = 0f;
-            LoadRoSShared();
             progress = 0.1f;
             args.ReportProgress(progress);
 
