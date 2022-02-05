@@ -19,12 +19,10 @@ namespace PassivePicasso.RainOfStages.Designer
     using Path = System.IO.Path;
     public class CreateAsset : ScriptableObject
     {
-        static int updateWait = 10;
 
         [InitializeOnLoadMethod]
         public static void InitializeProject()
         {
-            updateWait = 10;
             EditorApplication.update += InstallEditorPack;
         }
 
