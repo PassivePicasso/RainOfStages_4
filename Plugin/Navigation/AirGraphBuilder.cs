@@ -17,17 +17,17 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             typeof(SceneInfo).GetField($"airNodesAsset",
                                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         public List<NavigationProbe> Probes = new List<NavigationProbe>();
-        IEnumerable<GameObject> FindGameObjectsWithLayer(int layer)
+        IEnumerable<GameObject> FindCollidersOnLayer(int layer)
         {
-            var goArray = FindObjectsOfType<GameObject>();
+            var goArray = FindObjectsOfType<Collider>();
             for (var i = 0; i < goArray.Length; i++)
-                if (goArray[i].layer == layer)
-                    yield return goArray[i];
+                if (goArray[i].gameObject.layer == layer)
+                    yield return goArray[i].gameObject;
         }
 
         public override void Build()
         {
-            if (!FindGameObjectsWithLayer(LayerIndex.world.intVal).Any())
+            if (!FindCollidersOnLayer(LayerIndex.world.intVal).Any())
                 return;
 
             Probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
