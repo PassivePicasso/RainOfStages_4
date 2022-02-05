@@ -15,32 +15,10 @@ MonoBehaviour:
   Data:
   - {fileID: 114211750285825468}
   - {fileID: 114082092247317074}
+  - {fileID: 114247207823193210}
   - {fileID: 114978965694430374}
   - {fileID: 114665084937475452}
-  - {fileID: 114011629327989698}
-  - {fileID: 114339530207379210}
   identity: {fileID: 114211750285825468}
---- !u!114 &114011629327989698
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17d1008b78cb6e846889b7778282fbef, type: 3}
-  m_Name: AssetBundleDefinitions
-  m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
-  StagingPaths:
-  - <ManifestPluginStaging>
-  assetBundles:
-  - assetBundleName: RoSShared
-    assets:
-    - {fileID: 11400000, guid: fa6d7e34c49e43345868c278c846c70b, type: 2}
 --- !u!114 &114082092247317074
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -80,28 +58,29 @@ MonoBehaviour:
   Name: RainOfStages
   Description: Rain of Stages is a framework to assist in the creation, testing, packaging
     and deployment of custom Risk of Rain 2 stages and mods
-  Version: 3.0.11
+  Version: 4.1.3
   Dependencies:
   - {fileID: 11400000, guid: 2d4d09ec817c24698d35dc9bf0704fdc, type: 2}
---- !u!114 &114339530207379210
+--- !u!114 &114247207823193210
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dda4ac7962f04724eacfeb26af5e2b75, type: 3}
-  m_Name: UnityPackages
+  m_Script: {fileID: 11500000, guid: 4b243ff405b33b94dbf5b6775dd9aa33, type: 3}
+  m_Name: Files
   m_EditorClassIdentifier: 
   Errored: 0
   ErrorMessage: 
   ErrorStacktrace: 
   StagingPaths:
-  - <ManifestPluginStaging>
-  unityPackages:
-  - {fileID: 11400000, guid: 51f9b6e201021c64a96f91545ff6670f, type: 2}
+  - <ManifestStagingRoot>
+  files:
+  - {fileID: 4900000, guid: 6253891c9532ac140af6adcaf3707393, type: 3}
+  - {fileID: 2800000, guid: 2285fe866fc76574bb3a11f71a9ff747, type: 3}
 --- !u!114 &114665084937475452
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -138,7 +117,7 @@ MonoBehaviour:
   ErrorMessage: 
   ErrorStacktrace: 
   StagingPaths:
-  - <ManifestStagingRoot>
+  - <ManifestPluginStaging>
   files:
-  - {fileID: 4900000, guid: 6253891c9532ac140af6adcaf3707393, type: 3}
-  - {fileID: 2800000, guid: 2285fe866fc76574bb3a11f71a9ff747, type: 3}
+  - {fileID: 102900000, guid: fed4b3d1eee58a24f8cbb8dcb399ff93, type: 3}
+  - {fileID: 102900000, guid: 3df938db3d004614a9225bf60a982ea2, type: 3}
