@@ -88,56 +88,16 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static Mesh teleporterOkMesh;
         private static Mesh noCeilingMesh;
+        private static bool regenerateMesh;
+        private static bool repaint;
         #endregion
 
-        [InitializeOnLoadMethod]
-        static void InitializeDebugDrawer()
-        {
-            Camera.onPreCull -= Draw;
-            Camera.onPreCull += Draw;
-        }
 
-        private void OnEnable()
-        {
-            linkMaterial = GetDebugMaterial();
-            nodeMaterial = GetDebugMaterial(true);
-
-            groundNodeGraph = (NodeGraph)serializedObject.FindProperty("groundNodesAsset").objectReferenceValue;
-            if (groundNodeGraph)
-            {
-                groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
-                groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
-            }
-
-            airNodeGraph = (NodeGraph)serializedObject.FindProperty("airNodesAsset").objectReferenceValue;
-            if (airNodeGraph)
-            {
-                airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
-                airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
-            }
-            RegenerateMeshes();
-        }
-
-        static string GUIDName(string value)
-        {
-            value = $"ThunderKit_RoS_{value}";
-
-            using (var md5 = MD5.Create())
-            {
-                byte[] shortNameBytes = Encoding.UTF8.GetBytes(value);
-                var shortNameHash = md5.ComputeHash(shortNameBytes);
-                var guid = new Guid(shortNameHash);
-                var cleanedGuid = guid.ToString().ToLower().Replace("-", "");
-                return cleanedGuid;
-            }
-        }
         public override void OnInspectorGUI()
         {
             DrawPropertiesExcluding(serializedObject, "m_Script", "approximateMapBoundMesh", "groundNodeGroup", "airNodeGroup", "railNodeGroup");
 
             LoadDebugValues();
-            var repaint = false;
-            var regenerateMesh = false;
             repaint |= CheckedField(() => DebugNoCeiling = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugNoCeiling)), DebugNoCeiling));
             if (DebugNoCeiling)
                 repaint |= regenerateMesh |= CheckedField(() => NoCeilingColor = EditorGUILayout.ColorField(NoCeilingColor), ObjectNames.NicifyVariableName(nameof(NoCeilingColor)));
@@ -169,14 +129,62 @@ namespace PassivePicasso.RainOfStages.Designer
 
             SaveDebugValues();
 
-            if (regenerateMesh)
-                RegenerateMeshes();
-
-            if (repaint)
-                SceneView.lastActiveSceneView.Repaint();
         }
 
-        private void SaveDebugValues()
+        [InitializeOnLoadMethod]
+        static void InitializeDebugDrawer()
+        {
+            linkMaterial = GetDebugMaterial();
+            nodeMaterial = GetDebugMaterial(true);
+            Camera.onPreCull -= Draw;
+            Camera.onPreCull += Draw;
+            EditorApplication.update -= UpdateMeshCheck;
+            EditorApplication.update += UpdateMeshCheck;
+        }
+
+        private static void Draw(Camera camera)
+        {
+            if (DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugAirLinks && airLinkLineMesh) Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugGroundLinks)
+            {
+                if (groundLinkLineMesh)
+                    Graphics.DrawMesh(groundLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                if (groundLinkArrowMesh)
+                    Graphics.DrawMesh(groundLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            }
+        }
+
+        private static void UpdateMeshCheck()
+        {
+            if (repaint)
+            {
+                var sceneInfo = FindObjectOfType<SceneInfo>();
+                var serializedObject = new SerializedObject(sceneInfo);
+                groundNodeGraph = (NodeGraph)serializedObject.FindProperty("groundNodesAsset").objectReferenceValue;
+                if (groundNodeGraph)
+                {
+                    groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
+                    groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
+                }
+
+                airNodeGraph = (NodeGraph)serializedObject.FindProperty("airNodesAsset").objectReferenceValue;
+                if (airNodeGraph)
+                {
+                    airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
+                    airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
+                }
+                RegenerateMeshes();
+
+                SceneView.lastActiveSceneView.Repaint();
+                repaint = false;
+            }
+        }
+
+        private static void SaveDebugValues()
         {
             EditorPrefs.SetBool(GUIDName(nameof(DebugNoCeiling)), DebugNoCeiling);
             EditorPrefs.SetBool(GUIDName(nameof(DebugTeleporterOk)), DebugTeleporterOk);
@@ -192,7 +200,7 @@ namespace PassivePicasso.RainOfStages.Designer
             EditorPrefs.SetString(GUIDName(nameof(QueenColor)), JsonUtility.ToJson(QueenColor));
         }
 
-        private void LoadDebugValues()
+        private static void LoadDebugValues()
         {
             if (EditorPrefs.HasKey(GUIDName(nameof(DebugNoCeiling)))) DebugNoCeiling = EditorPrefs.GetBool(GUIDName(nameof(DebugNoCeiling)));
             if (EditorPrefs.HasKey(GUIDName(nameof(DebugTeleporterOk)))) DebugTeleporterOk = EditorPrefs.GetBool(GUIDName(nameof(DebugTeleporterOk)));
@@ -208,8 +216,9 @@ namespace PassivePicasso.RainOfStages.Designer
             if (EditorPrefs.HasKey(GUIDName(nameof(QueenColor)))) QueenColor = JsonUtility.FromJson<Color>(EditorPrefs.GetString(GUIDName(nameof(QueenColor))));
         }
 
-        private void RegenerateMeshes()
+        private static void RegenerateMeshes()
         {
+            regenerateMesh = false;
             if (colormap == null)
                 colormap = new Dictionary<HullMask, Color> {
                     { HullMask.Human, HumanColor },
@@ -237,20 +246,7 @@ namespace PassivePicasso.RainOfStages.Designer
                 airLinkLineMesh = GenerateAirLinkMesh(airNodes, airLinks);
                 airNodeMesh = GenerateNodeMesh(airNodes);
             }
-        }
 
-        private static void Draw(Camera camera)
-        {
-            if (DebugTeleporterOk) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugNoCeiling) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugGroundNodes) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugAirNodes) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugAirLinks) Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugGroundLinks)
-            {
-                Graphics.DrawMesh(groundLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-                Graphics.DrawMesh(groundLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            }
         }
 
         bool CheckedField(Action drawField, string label = null)
@@ -265,7 +261,7 @@ namespace PassivePicasso.RainOfStages.Designer
             return EditorGUI.EndChangeCheck();
         }
 
-        Mesh GenerateNodeExtraMesh(NodeGraph.Node[] nodes, Vector3 offset, Color color, Predicate<NodeGraph.Node> predicate)
+        private static Mesh GenerateNodeExtraMesh(NodeGraph.Node[] nodes, Vector3 offset, Color color, Predicate<NodeGraph.Node> predicate)
         {
             var vertices = new List<Vector3>();
             var indices = new List<int>();
@@ -290,7 +286,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return GetMesh(vertices, indices, colors, MeshTopology.Triangles);
         }
-        Mesh GenerateNodeMesh(NodeGraph.Node[] nodes)
+        private static Mesh GenerateNodeMesh(NodeGraph.Node[] nodes)
         {
             var vertices = new List<Vector3>();
             var indices = new List<int>();
@@ -327,7 +323,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return GetMesh(vertices, indices, colors, MeshTopology.Triangles);
         }
-        Mesh GenerateGroundLinkMesh(LinkMeshType linkMeshType, NodeGraph.Node[] nodes, NodeGraph.Link[] links)
+        private static Mesh GenerateGroundLinkMesh(LinkMeshType linkMeshType, NodeGraph.Node[] nodes, NodeGraph.Link[] links)
         {
             if (linkMeshType != LinkMeshType.arrow && linkMeshType != LinkMeshType.line)
                 throw new System.ArgumentException(nameof(linkMeshType));
@@ -410,7 +406,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return null;
         }
-        Mesh GenerateAirLinkMesh(NodeGraph.Node[] nodes, NodeGraph.Link[] links)
+        private static Mesh GenerateAirLinkMesh(NodeGraph.Node[] nodes, NodeGraph.Link[] links)
         {
             var linkEnds = new List<Vector3>();
             var linkEdges = new List<int>();
@@ -451,26 +447,48 @@ namespace PassivePicasso.RainOfStages.Designer
             return linkMesh;
         }
 
-        Material GetDebugMaterial(bool nodes = false)
+        private static Material GetDebugMaterial(bool nodes = false)
         {
-            var sceneView = SceneView.lastActiveSceneView;
             Material material = null;
-            switch (sceneView.cameraMode.drawMode)
-            {
-                case DrawCameraMode.Textured:
-                case DrawCameraMode.Wireframe:
-                case DrawCameraMode.TexturedWire:
-                    if (nodes)
-                        material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "NodeMaterial.mat"));
-                    else
-                        material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "LinkMaterial.mat"));
-                    break;
-                case DrawCameraMode.Overdraw:
-                    material = new Material(Shader.Find("Hidden/UI/Overdraw"));
-                    break;
-            }
+
+            var sceneView = SceneView.lastActiveSceneView;
+
+            if (!sceneView)
+                sceneView = SceneView.currentDrawingSceneView;
+
+            if (!sceneView)
+                material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "NodeMaterial.mat"));
+            else
+                switch (sceneView.cameraMode.drawMode)
+                {
+                    case DrawCameraMode.Textured:
+                    case DrawCameraMode.Wireframe:
+                    case DrawCameraMode.TexturedWire:
+                        if (nodes)
+                            material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "NodeMaterial.mat"));
+                        else
+                            material = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "LinkMaterial.mat"));
+                        break;
+                    case DrawCameraMode.Overdraw:
+                        material = new Material(Shader.Find("Hidden/UI/Overdraw"));
+                        break;
+                }
 
             return material;
+        }
+
+        static string GUIDName(string value)
+        {
+            value = $"ThunderKit_RoS_{value}";
+
+            using (var md5 = MD5.Create())
+            {
+                byte[] shortNameBytes = Encoding.UTF8.GetBytes(value);
+                var shortNameHash = md5.ComputeHash(shortNameBytes);
+                var guid = new Guid(shortNameHash);
+                var cleanedGuid = guid.ToString().ToLower().Replace("-", "");
+                return cleanedGuid;
+            }
         }
     }
 }
