@@ -3,6 +3,7 @@ using RoR2.Navigation;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Profiling;
 using static RoR2.Navigation.NodeGraph;
 
@@ -60,6 +61,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         protected readonly List<int> resultsIndices = new List<int>();
 
+        public static UnityAction OnBuilt;
+
         public bool rebuild;
 
         private void Update()
@@ -69,6 +72,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 try
                 {
                     Build();
+                    OnBuilt?.Invoke();
                 }
                 finally
                 {

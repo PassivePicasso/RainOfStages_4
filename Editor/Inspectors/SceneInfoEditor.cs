@@ -1,4 +1,5 @@
-﻿using PassivePicasso.RainOfStages.Plugin.Utility;
+﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
+using PassivePicasso.RainOfStages.Plugin.Utility;
 using RoR2;
 using RoR2.Navigation;
 using System;
@@ -100,19 +101,19 @@ namespace PassivePicasso.RainOfStages.Designer
             LoadDebugValues();
             repaint |= CheckedField(() => DebugNoCeiling = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugNoCeiling)), DebugNoCeiling));
             if (DebugNoCeiling)
-                repaint |= regenerateMesh |= CheckedField(() => NoCeilingColor = EditorGUILayout.ColorField(NoCeilingColor), ObjectNames.NicifyVariableName(nameof(NoCeilingColor)));
+                regenerateMesh |= CheckedField(() => NoCeilingColor = EditorGUILayout.ColorField(NoCeilingColor), ObjectNames.NicifyVariableName(nameof(NoCeilingColor)));
 
             repaint |= CheckedField(() => DebugTeleporterOk = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugTeleporterOk)), DebugTeleporterOk));
             if (DebugTeleporterOk)
-                repaint |= regenerateMesh |= CheckedField(() => TeleporterOkColor = EditorGUILayout.ColorField(TeleporterOkColor), ObjectNames.NicifyVariableName(nameof(TeleporterOkColor)));
+                regenerateMesh |= CheckedField(() => TeleporterOkColor = EditorGUILayout.ColorField(TeleporterOkColor), ObjectNames.NicifyVariableName(nameof(TeleporterOkColor)));
 
             repaint |= CheckedField(() => DebugGroundNodes = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugGroundNodes)), DebugGroundNodes));
             repaint |= CheckedField(() => DebugGroundLinks = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugGroundLinks)), DebugGroundLinks));
             if (DebugGroundLinks)
             {
-                repaint |= regenerateMesh |= CheckedField(() => VerticalOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(VerticalOffset)), VerticalOffset, 0, 20));
-                repaint |= regenerateMesh |= CheckedField(() => arrowSize = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowSize)), arrowSize, 1, 10));
-                repaint |= regenerateMesh |= CheckedField(() => arrowOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowOffset)), arrowOffset, 0, percentageOffset ? 1 : 20));
+                regenerateMesh |= CheckedField(() => VerticalOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(VerticalOffset)), VerticalOffset, 0, 20));
+                regenerateMesh |= CheckedField(() => arrowSize = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowSize)), arrowSize, 1, 10));
+                regenerateMesh |= CheckedField(() => arrowOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowOffset)), arrowOffset, 0, percentageOffset ? 1 : 20));
                 repaint |= CheckedField(() => percentageOffset = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(percentageOffset)), percentageOffset));
 
             }
@@ -122,10 +123,11 @@ namespace PassivePicasso.RainOfStages.Designer
 
             if (DebugGroundLinks || DebugGroundNodes || DebugAirLinks || DebugAirNodes)
             {
-                repaint |= regenerateMesh |= CheckedField(() => HumanColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(HumanColor)), HumanColor));
-                repaint |= regenerateMesh |= CheckedField(() => GolemColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(GolemColor)), GolemColor));
-                repaint |= regenerateMesh |= CheckedField(() => QueenColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(QueenColor)), QueenColor));
+                regenerateMesh |= CheckedField(() => HumanColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(HumanColor)), HumanColor));
+                regenerateMesh |= CheckedField(() => GolemColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(GolemColor)), GolemColor));
+                regenerateMesh |= CheckedField(() => QueenColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(QueenColor)), QueenColor));
             }
+            repaint |= regenerateMesh;
 
             SaveDebugValues();
 
@@ -136,10 +138,20 @@ namespace PassivePicasso.RainOfStages.Designer
         {
             linkMaterial = GetDebugMaterial();
             nodeMaterial = GetDebugMaterial(true);
+            LoadDebugValues();
+            OnBuilt();
             Camera.onPreCull -= Draw;
             Camera.onPreCull += Draw;
             EditorApplication.update -= UpdateMeshCheck;
             EditorApplication.update += UpdateMeshCheck;
+            GraphBuilder.OnBuilt -= OnBuilt;
+            GraphBuilder.OnBuilt += OnBuilt;
+        }
+
+        private static void OnBuilt()
+        {
+            regenerateMesh = true;
+            repaint = true;
         }
 
         private static void Draw(Camera camera)
