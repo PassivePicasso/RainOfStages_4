@@ -92,13 +92,13 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
 
             //Line of sight to probe check
-            if (Physics.RaycastNonAlloc(probe.transform.position, dir, hitArray, dist, LayerIndex.world.mask) > 0)
+            if (Physics.RaycastNonAlloc(probe.transform.position, dir, hitArray, dist, LayerIndex.enemyBody.collisionMask) > 0)
             {
                 return false;
             }
 
             //Too close check
-            int overlaps = Physics.OverlapSphereNonAlloc(np, HumanHeight, colliders, LayerIndex.world.mask);
+            int overlaps = Physics.OverlapSphereNonAlloc(np, HumanHeight, colliders, LayerIndex.enemyBody.collisionMask);
             if (overlaps > 0)
                 return false;
 
@@ -123,13 +123,13 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var golemCapsule = GolemCapsule(a.position + (Vector3.down * GolemHeight / 2));
             var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
 
-            if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius * 1.25f, direction, hitArray, maxDist, LayerIndex.entityPrecise.collisionMask) == 0)
+            if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
                 mask = AllHulls;
             else
-            if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius * 1.25f, direction, hitArray, maxDist, LayerIndex.entityPrecise.collisionMask) == 0)
+            if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
                 mask = AllHulls ^ HullMask.BeetleQueen;
             else
-            if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius * 1.25f, direction, hitArray, maxDist, LayerIndex.entityPrecise.collisionMask) == 0)
+            if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
                 mask = HullMask.Human;
 
             if (mask == HullMask.None) return false;
@@ -216,7 +216,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 }
 
                 //no ceiling check
-                var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.entityPrecise.collisionMask) > 0;
+                var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.enemyBody.collisionMask) > 0;
 
                 nodes.Add(new Node
                 {
