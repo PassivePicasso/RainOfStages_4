@@ -16,10 +16,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public float distance = 15;
         public float minimumSurfaceDistance = 2f;
         public float maximumSurfaceDistance = 30f;
+        public float linkDistance = 10;
+        public float nodeSeparation = 5;
         public int targetPointCount = 100;
         public int pointPasses = 10;
-        public int linkDistance = 10;
-        public int nodeSeparation = 5;
         public bool isDirty = false;
         public bool drawVolumeSphere = false;
 
@@ -32,9 +32,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         [SerializeField, HideInInspector]
         private int lastSeed;
         [SerializeField, HideInInspector]
-        private int lastLinkDistance = 10;
+        private float lastLinkDistance = 10;
         [SerializeField, HideInInspector]
-        private int lastNodeSeparation = 5;
+        private float lastNodeSeparation = 5;
         [SerializeField, HideInInspector]
         private int lastTargetPointCount = 5;
         [SerializeField, HideInInspector]
@@ -73,27 +73,16 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         {
             if (!drawVolumeSphere) return;
 
-            //if (!mesh)
-            {
-                var filter = GameObject
-                    .CreatePrimitive(PrimitiveType.Cube)
-                    .GetComponent<MeshFilter>();
-                mesh = filter.sharedMesh;
-                DestroyImmediate(filter.gameObject);
-            }
-
-            
-            Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.color = navigationProbeColor;
-            Gizmos.DrawMesh(mesh);
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.color = Color.black;
+            Gizmos.DrawCube(transform.position, Vector3.one);
             var maxLength = 0f;
             if (nodePositions.Any())
-                nodePositions.Max(v => v.magnitude);
+                maxLength = nodePositions.Max(v => v.magnitude);
             else
                 maxLength = distance;
 
             Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.5f);
-            Gizmos.matrix = Matrix4x4.identity;
             Gizmos.DrawSphere(transform.position, maxLength);
         }
     }
