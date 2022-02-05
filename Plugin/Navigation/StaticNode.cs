@@ -2,6 +2,7 @@
 using RoR2.Navigation;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
@@ -26,6 +27,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public bool allowOutboundConnections = true;
         public bool allowInboundConnections = true;
         public StaticNode[] HardLinks;
+        [Tooltip("Editor Only: This is invoked when the static node is changed in the Unity Editor")]
+        public UnityAction onChanged;
 
         public Vector3 position
         {

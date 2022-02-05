@@ -7,10 +7,10 @@ using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Behaviours
 {
-    [ExecuteAlways, RequireComponent(typeof(SphereCollider))]
+    [ExecuteAlways]
     public class JumpPad : MonoBehaviour
     {
-        private static readonly string DebugShaderName = "Unlit/Color";
+        private static readonly string DebugShaderName = "RainOfStages/VertexColor";
         public float time;
         public Vector3 destination;
         private Vector3 origin => transform.position;
@@ -23,6 +23,7 @@ namespace PassivePicasso.RainOfStages.Behaviours
 
         public void Update()
         {
+            if (Application.isPlaying) return;
             if (regenerateStaticNodes)
                 foreach (var node in GetComponents<StaticNode>())
                     DestroyImmediate(node);
@@ -32,7 +33,9 @@ namespace PassivePicasso.RainOfStages.Behaviours
                 destinationNode.nodeName = "Destination";
                 destinationNode.forbiddenHulls = HullMask.None;
                 destinationNode.HardLinks = new StaticNode[0];
+                destinationNode.staticNodeColor = Color.green;
                 destinationNode.worldSpacePosition = true;
+                destinationNode.relativePosition = false;
                 destinationNode.overrideDistanceScore = true;
                 destinationNode.allowDynamicConnections = true;
                 destinationNode.nodePosition = transform.forward * 10;
@@ -52,6 +55,14 @@ namespace PassivePicasso.RainOfStages.Behaviours
             }
             if (regenerateStaticNodes) regenerateStaticNodes = false;
 
+            destinationNode.onChanged -= OnDestinationChanged;
+            destinationNode.onChanged += OnDestinationChanged;
+
+            destination = destinationNode.position;
+        }
+
+        private void OnDestinationChanged()
+        {
             destination = destinationNode.position;
         }
 
@@ -75,16 +86,24 @@ namespace PassivePicasso.RainOfStages.Behaviours
         {
             if (!gizmoMaterial || gizmoMaterial.shader.name != DebugShaderName)
                 gizmoMaterial = new Material(Shader.Find(DebugShaderName));
-            gizmoMaterial.color = Color.red;
             gizmoMaterial.SetPass(0);
+            Color originColor = originNode.staticNodeColor;
+            Color destinationColor = destinationNode.staticNodeColor;
 
             var trajectory = Trajectory().ToArray();
             GL.PushMatrix();
             GL.Begin(GL.LINES);
-            for (int i = 0; i < trajectory.Length; i++)
+            for (int i = 0; i < trajectory.Length - 1; i++)
             {
-                GL.Color(Color.red);
+                var t = (float)i / (float)trajectory.Length;
+                Color currentColor = Color.Lerp(originColor, destinationColor, t);
+                GL.Color(currentColor);
                 GL.Vertex3(trajectory[i].x, trajectory[i].y, trajectory[i].z);
+                
+                t = (float)(i + 1) / (float)trajectory.Length;
+                currentColor = Color.Lerp(originColor, destinationColor, t);
+                GL.Color(currentColor);
+                GL.Vertex3(trajectory[i + 1].x, trajectory[i + 1].y, trajectory[i + 1].z);
             }
             GL.End();
             GL.PopMatrix();
@@ -96,9 +115,9 @@ namespace PassivePicasso.RainOfStages.Behaviours
         public IEnumerable<Vector3> Trajectory()
         {
             var to = transform.position;
-            var tf = time * 1.75f;
+            var tf = time;
             var velocity = GetVelocity(tf);
-            var timeStep = Time.fixedDeltaTime * 8;
+            var timeStep = Time.fixedDeltaTime;
             for (float f = tf; f > 0; f -= timeStep)
             {
                 var from = to;

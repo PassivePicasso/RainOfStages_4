@@ -1,5 +1,4 @@
 ﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
-using RoR2;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -20,20 +19,32 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                 if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
                 {
                     Ray mouseRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                    if (Physics.Raycast(mouseRay, out var hitInfo, float.MaxValue))
+                    {
+                        Undo.RecordObject(staticNode.gameObject, $"(StaticNode) Change {staticNode.name} Position");
+                        staticNode.position = hitInfo.point;
+                        if (staticNode.onChanged != null)
+                            staticNode.onChanged.Invoke();
+                        serializedObject.ApplyModifiedProperties();
+                        serializedObject.UpdateIfRequiredOrScript();
+                    }
                     if (Physics.RaycastNonAlloc(mouseRay, raycastHits, float.MaxValue) > 0)
                     {
                         var hitsByDistance = raycastHits
                                                     .Where(hit => hit.collider != null)
-                                                    .OrderBy(hit => hit.distance)
-                                                   .ToArray();
-                        var hitInfo = hitsByDistance
+                                                    .OrderBy(hit => hit.distance);
+
+                        var closestNonChildHitInfo = hitsByDistance
                             .FirstOrDefault(hit => !hit.collider.transform.IsChildOf(staticNode.transform));
 
-                        if (hitInfo.collider != null)
+                        if (closestNonChildHitInfo.collider != null)
                         {
                             Undo.RecordObject(staticNode.gameObject, $"(StaticNode) Change {staticNode.name} Position");
-                            staticNode.position = hitInfo.point;
+                            staticNode.position = closestNonChildHitInfo.point;
+                            if (staticNode.onChanged != null)
+                                staticNode.onChanged.Invoke();
                             serializedObject.ApplyModifiedProperties();
+                            serializedObject.UpdateIfRequiredOrScript();
                         }
                     }
                 }
@@ -41,3 +52,4 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
         }
     }
 }
+
