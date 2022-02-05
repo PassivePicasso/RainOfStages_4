@@ -71,18 +71,19 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         }
         void OnDrawGizmos()
         {
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.color = navigationProbeColor;
+            Gizmos.DrawCube(transform.position, Vector3.one);
+
             if (!drawVolumeSphere) return;
 
-            Gizmos.matrix = Matrix4x4.identity;
-            Gizmos.color = Color.black;
-            Gizmos.DrawCube(transform.position, Vector3.one);
             var maxLength = 0f;
             if (nodePositions.Any())
                 maxLength = nodePositions.Max(v => v.magnitude);
             else
                 maxLength = distance;
 
-            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.5f);
+            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.25f);
             Gizmos.DrawSphere(transform.position, maxLength);
         }
     }
