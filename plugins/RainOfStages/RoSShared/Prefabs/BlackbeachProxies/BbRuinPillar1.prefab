@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8274436295833529632}
   - component: {fileID: 621431710501556295}
   - component: {fileID: 782208202258224766}
-  m_Layer: 12
+  m_Layer: 0
   m_Name: PillarRepresentative
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -102,7 +102,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5346948176375577150}
   - component: {fileID: 5346948176375577144}
-  m_Layer: 12
+  m_Layer: 0
   m_Name: BbRuinPillar1
   m_TagString: Untagged
   m_Icon: {fileID: -5397416234189338067, guid: 0000000000000000d000000000000000, type: 0}
