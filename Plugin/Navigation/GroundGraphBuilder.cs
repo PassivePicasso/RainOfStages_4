@@ -38,6 +38,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var nodes = new List<Node>();
             var links = new List<Link>();
             var pointTree = new KDTree();
+            pointTree.SetCount(pointCount);
+            pointTree.Rebuild();
             var query = new KDQuery();
             var nodePoints = new List<Vector3>();
 
