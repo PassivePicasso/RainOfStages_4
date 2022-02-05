@@ -208,7 +208,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public void LinkNodes(List<Node> nodes, List<Link> links, KDTree pointTree, KDQuery query, List<StaticNode> staticNodes)
         {
             var resultsIndices = new List<int>();
-            uint linkCount = 0;
             Profiler.BeginSample("Construct node links");
             for (int i = 0; i < nodes.Count; i++)
             {
