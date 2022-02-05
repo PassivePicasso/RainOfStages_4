@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
 {
     [ExecuteAlways]
     public abstract class AssetArrayMapper<ComponentType, AssetType> : MonoBehaviour where AssetType : UnityEngine.Object where ComponentType : Component
     {
-        public virtual AssetType[] ClonedAssets => Array.Empty<AssetType>();
+        public AssetType[] ClonedAssets { get; set; }
 
         public IEnumerable<AssetType> Asset { get; private set; }
 
@@ -24,6 +25,8 @@ namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
         protected virtual BindingFlags FieldBindings { get; } = BindingFlags.Public | BindingFlags.Instance;
         protected abstract string MemberName { get; }
 
+        public UnityAction<AssetArrayMapper<ComponentType, AssetType>> BeforeEditorAssign;
+
         private void Start()
         {
             if (Application.isEditor) return;
@@ -34,6 +37,7 @@ namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
         void OnEnable()
         {
             if (!Application.isEditor) return;
+            BeforeEditorAssign?.Invoke(this);
             Initialize();
             Assign(ClonedAssets);
         }
@@ -49,6 +53,7 @@ namespace PassivePicasso.RainOfStages.Plugin.AssetMapping
         {
             if (!Application.isEditor) return;
             if (!isActiveAndEnabled) return;
+            BeforeEditorAssign?.Invoke(this);
             Initialize();
             Assign(ClonedAssets);
         }
