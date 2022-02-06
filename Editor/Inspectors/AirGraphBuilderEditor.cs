@@ -12,9 +12,13 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
         bool ShowProbes = false;
         Dictionary<AirGraphBuilder, bool[]> probeStates = new Dictionary<AirGraphBuilder, bool[]>();
 
-        public override void OnInspectorGUI()
+        protected override IEnumerable<string> ExcludedProperties()
         {
-            base.OnInspectorGUI();
+            yield return "Probes";
+        }
+
+        protected override void OnDrawTitleButtons()
+        {
             var airBuilder = this.builder as AirGraphBuilder;
             if (!airBuilder) return;
             if (!probeStates.ContainsKey(airBuilder))
@@ -39,6 +43,17 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                 probeStates[airBuilder].CopyTo(newStates, 0);
                 probeStates[airBuilder] = newStates;
             }
+        }
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+
+            var airBuilder = this.builder as AirGraphBuilder;
+            if (!airBuilder) return;
+            if (!probeStates.ContainsKey(airBuilder))
+                probeStates[airBuilder] = new bool[airBuilder.Probes.Count];
+
+
             ShowProbes = EditorGUILayout.Foldout(ShowProbes, new GUIContent("Probes"));
             EditorGUI.indentLevel++;
             if (ShowProbes)
@@ -59,7 +74,6 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                     {
                         airBuilder.Probes.RemoveAt(i);
                         DestroyImmediate(probe.gameObject);
-                        airBuilder.LinkGlobalNodes();
                         break;
                     }
                     probeStates[airBuilder][i] = EditorGUILayout.Foldout(probeStates[airBuilder][i], new GUIContent(probe.name));

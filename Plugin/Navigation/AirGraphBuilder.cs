@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
-using UnityEngine.SceneManagement;
 using static RoR2.Navigation.NodeGraph;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
@@ -16,7 +15,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public static System.Reflection.FieldInfo nodeGraphAssetField =
             typeof(SceneInfo).GetField($"airNodesAsset",
                                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        public int seed;
+        public float nodeSeparation = 8;
+        public float linkDistance = 16;
+        public int pointsPerLeaf;
+        public int passes;
+
         public List<NavigationProbe> Probes = new List<NavigationProbe>();
+
         IEnumerable<GameObject> FindCollidersOnLayer(int layer)
         {
             var goArray = FindObjectsOfType<Collider>();
@@ -25,71 +32,43 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     yield return goArray[i].gameObject;
         }
 
-        public override void Build()
+        protected override void OnBuild()
         {
             if (!FindCollidersOnLayer(LayerIndex.world.intVal).Any())
                 return;
 
             Probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
-            var updateLinks = false;
-            foreach (var probe in Probes)
+            InitializeSeed(seed);
+            var nodePositions = new List<Vector3>();
+            Profiler.BeginSample("Acquire Node Positions");
+            var nodeArea = Mathf.PI * (nodeSeparation * nodeSeparation);
+            for (int p = 0; p < passes; p++)
             {
-                if (!rebuild && !probe.isDirty) continue;
-                try
+                foreach (var probe in Probes)
                 {
-                    updateLinks = true;
-                    InitializeSeed(probe.seed);
-
-                    var pointTree = new KDTree(16);
-                    var query = new KDQuery(probe.targetPointCount);
-                    var fails = 0;
-                    var localTarget = probe.targetPointCount;
-                    probe.nodePositions.Clear();
-                    Profiler.BeginSample("Create Probe Nodes");
-                    while (probe.nodePositions.Count <= localTarget)
+                    var probeArea = Mathf.PI * (probe.distance * probe.distance);
+                    var relativeArea = probeArea / nodeArea;
+                    int maxCount = (int)relativeArea * 10;
+                    for (int i = 0; i < maxCount; i++)
                     {
-                        if (fails > probe.pointPasses)
-                        {
-                            localTarget--;
-                            localTarget = Mathf.Clamp(localTarget, probe.targetPointCount / 2, probe.targetPointCount);
-                            fails = 0;
-                        }
-
-                        if (!TryGetPoint(probe, query, pointTree, out var point))
-                        {
-                            fails++;
+                        if (!TryGetPoint(probe, out var point))
                             continue;
-                        }
 
-                        probe.nodePositions.Add(point);
-                        pointTree.Build(probe.nodePositions);
+                        nodePositions.Add(point);
                     }
-                    Profiler.EndSample();
-                }
-                finally
-                {
-                    probe.isDirty = false;
                 }
             }
-            if (updateLinks)
-                LinkGlobalNodes();
+            Profiler.EndSample();
+
+            LinkGlobalNodesAlternate(nodePositions);
         }
 
-        protected bool TryGetPoint(NavigationProbe probe, KDQuery query, KDTree pointTree, out Vector3 position)
+        protected bool TryGetPoint(NavigationProbe probe, out Vector3 position)
         {
             position = Random.insideUnitSphere * probe.distance;
-            var np = probe.transform.TransformPoint(position);
-            var dir = (np - probe.transform.position).normalized;
-            var dist = Vector3.Distance(probe.transform.position, np);
-
-            if (pointTree.Count > 0)
-            {
-                resultsIndices.Clear();
-                query.Radius(pointTree, np, probe.nodeSeparation, resultsIndices);
-                //Nodes in separation radius
-                if (resultsIndices.Any())
-                    return false;
-            }
+            position = probe.transform.TransformPoint(position);
+            var dir = (position - probe.transform.position).normalized;
+            var dist = Vector3.Distance(probe.transform.position, position);
 
             //Line of sight to probe check
             if (Physics.RaycastNonAlloc(probe.transform.position, dir, hitArray, dist, LayerIndex.enemyBody.collisionMask) > 0)
@@ -98,128 +77,73 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
 
             //Too close check
-            int overlaps = Physics.OverlapSphereNonAlloc(np, HumanHeight, colliders, LayerIndex.enemyBody.collisionMask);
+            int overlaps = Physics.OverlapSphereNonAlloc(position, HumanHeight * 1.5f, colliders, LayerIndex.enemyBody.collisionMask);
             if (overlaps > 0)
                 return false;
 
             //too far check
-            overlaps = Physics.OverlapSphereNonAlloc(np, QueenHeight + 2, colliders, LayerIndex.world.mask);
+            overlaps = Physics.OverlapSphereNonAlloc(position, QueenHeight * 1.5f, colliders, LayerIndex.world.mask);
             if (overlaps <= 0)
                 return false;
 
             return true;
         }
 
-        protected bool TryAddLink(ref Node a, ref Node b, int nodeAIndex, int nodeBIndex, List<Link> links)
-        {
-            Profiler.BeginSample("TryAddLink");
-            var maxDist = Vector3.Distance(a.position, b.position);
-            Vector3 direction = (b.position - a.position).normalized;
 
-            var mask = HullMask.None;
-
-            //construct Hull Traversal mask
-            var humanCapsule = HumanCapsule(a.position + (Vector3.down * HumanHeight / 2));
-            var golemCapsule = GolemCapsule(a.position + (Vector3.down * GolemHeight / 2));
-            var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
-
-            if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
-                mask = AllHullsMask;
-            else
-            if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
-                mask = AllHullsMask ^ HullMask.BeetleQueen;
-            else
-            if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
-                mask = HullMask.Human;
-
-            if (mask == HullMask.None) return false;
-
-            //Set node forbiddenHulls
-            b.forbiddenHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen) ^ mask;
-
-            links.Add(new Link
-            {
-                distanceScore = Mathf.Sqrt((b.position - a.position).sqrMagnitude),
-                nodeIndexA = new NodeIndex(nodeAIndex),
-                nodeIndexB = new NodeIndex(nodeBIndex),
-                hullMask = (int)mask,
-                jumpHullMask = (int)mask,
-                maxSlope = 90
-            });
-            Profiler.EndSample();
-
-            return true;
-        }
-
-        public void LinkGlobalNodes()
+        public void LinkGlobalNodesAlternate(List<Vector3> nodePoints)
         {
             var pointTree = new KDTree();
             var query = new KDQuery(2048);
+            var addedIndices = new HashSet<int>();
+            var blackList = new HashSet<int>();
             var resultsIndices = new List<int>();
-            Profiler.BeginSample("Load Global Nodes");
-
-            var nodePoints = Probes.SelectMany(probe => probe.nodePositions.Select(p => probe.transform.TransformPoint(p))).ToList();
-            var nodeProbes = Probes.SelectMany(probe => probe.nodePositions.Select(p => probe)).ToList();
-
-            Profiler.EndSample();
             var nodes = new List<Node>();
             var links = new List<Link>();
             int nextLinkSetIndex = 0;
-            Profiler.BeginSample("Construct Global KDTree");
-            pointTree.Build(nodePoints, 32);
-            Profiler.EndSample();
-            void Remove(ref int ix)
-            {
-                Profiler.BeginSample("Remove Node and Reconstruct KDTree");
-                nodePoints.RemoveAt(ix);
-                nodeProbes.RemoveAt(ix);
-                ix--;
-                pointTree.Build(nodePoints, 64);
-                Profiler.EndSample();
-            }
-            void RemoveAll(List<int> indicies)
-            {
-                Profiler.BeginSample("Remove Node and Reconstruct KDTree");
 
-                for (int i = 0; i < indicies.Count; i++)
-                {
-                    nodePoints.RemoveAt(indicies[i] - i);
-                    nodeProbes.RemoveAt(indicies[i] - i);
-                }
-                pointTree.Build(nodePoints, 32);
-                Profiler.EndSample();
-            }
+            Profiler.BeginSample("Load Global Nodes");
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Construct Global KDTree");
+            pointTree.Build(nodePoints, pointsPerLeaf);
+            Profiler.EndSample();
+
             Profiler.BeginSample("Evaluate Global Nodes");
             for (int i = 0; i < nodePoints.Count; i++)
             {
                 var position = nodePoints[i];
-                var probe = nodeProbes[i];
 
-                //if nodes are within separation range of current node, remove other nodes in range
+                Profiler.BeginSample("Find nodes within separation");
                 resultsIndices.Clear();
-                query.Radius(pointTree, position, probe.nodeSeparation, resultsIndices);
-                resultsIndices.Remove(i);
+                query.Radius(pointTree, position, nodeSeparation, resultsIndices, whitelist: addedIndices);
+                Profiler.EndSample();
                 if (resultsIndices.Any())
-                {
-                    resultsIndices.Sort();
-                    RemoveAll(resultsIndices);
-                }
-
-                //if no nodes are within link range of current node, destroy this node
-                resultsIndices.Clear();
-                query.Radius(pointTree, position, probe.linkDistance, resultsIndices);
-                resultsIndices.Remove(i);
-                if (!resultsIndices.Any())
-                {
-                    Remove(ref i);
                     continue;
-                }
+
+                Profiler.BeginSample("Overlap Check Global Nodes");
+                var mask = AllHullsMask;
+                var queenCapsule = QueenCapsule(position + (Vector3.down * (QueenHeight / 2)));
+                var golemCapsule = GolemCapsule(position + (Vector3.down * (GolemHeight / 2)));
+                var humanCapsule = HumanCapsule(position + (Vector3.down * (HumanHeight / 2)));
+
+                if (Physics.OverlapCapsuleNonAlloc(queenCapsule.bottom, queenCapsule.top, QueenHull.radius, colliders, LayerIndex.enemyBody.collisionMask) == 0)
+                    mask = HullMask.None;
+                else if (Physics.OverlapCapsuleNonAlloc(golemCapsule.bottom, golemCapsule.top, GolemHull.radius, colliders, LayerIndex.enemyBody.collisionMask) == 0)
+                    mask = HullMask.BeetleQueen;
+                else if (Physics.OverlapCapsuleNonAlloc(humanCapsule.bottom, humanCapsule.top, HumanHull.radius, colliders, LayerIndex.enemyBody.collisionMask) == 0)
+                    mask = HullMask.BeetleQueen | HullMask.Golem;
+                Profiler.EndSample();
+
+                if (mask == AllHullsMask)
+                    continue;
+
+                var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.enemyBody.collisionMask) > 0;
+                addedIndices.Add(i);
 
                 //no ceiling check
-                var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.enemyBody.collisionMask) > 0;
-
                 nodes.Add(new Node
                 {
+                    forbiddenHulls = mask,
                     //no shrines or chests in air
                     flags = (NodeFlags.NoShrineSpawn | NodeFlags.NoChestSpawn)
                           //apply no ceiling based upon up hit
@@ -230,35 +154,63 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
             Profiler.EndSample();
 
+            Profiler.BeginSample("Update Global KDTree");
+            pointTree.Build(nodes.Select(n => n.position).ToArray(), pointsPerLeaf);
+
+            Profiler.EndSample();
 
             Profiler.BeginSample("Construct Node Links");
             for (int i = 0; i < nodes.Count; i++)
             {
-                var node = nodes[i];
-                var probe = nodeProbes[i];
+                var originNode = nodes[i];
+                blackList.Clear();
+                blackList.Add(i);
                 resultsIndices.Clear();
+                nextLinkSetIndex = links.Count;
+
                 //Find nodes within link range
-                query.Radius(pointTree, nodes[i].position, probe.linkDistance, resultsIndices);
-                resultsIndices.Remove(i);
-                int skipped = 0;
+                Profiler.BeginSample("Query for nodes in linkDistance");
+                query.Radius(pointTree, nodes[i].position, linkDistance, resultsIndices, whitelist: null, blackList);
+                Profiler.EndSample();
+                Profiler.BeginSample("TryAddLink");
                 foreach (var nni in resultsIndices)
                 {
-                    var a = nodes[i];
-                    var b = nodes[nni];
+                    var destinationNode = nodes[nni];
+                    var distance = Vector3.Distance(originNode.position, destinationNode.position);
+                    var direction = (destinationNode.position - originNode.position).normalized;
 
-                    if (!TryAddLink(ref a, ref b, i, nni, links))
-                    {
-                        skipped++;
+                    //construct Hull Traversal mask
+                    var mask = HullMask.None;
+                    var queenCapsule = QueenCapsule(originNode.position);
+                    var golemCapsule = GolemCapsule(originNode.position);
+                    var humanCapsule = HumanCapsule(originNode.position);
+
+                    if (Physics.CapsuleCastNonAlloc(queenCapsule.bottom, queenCapsule.top, QueenHull.radius, direction, hitArray, distance, LayerIndex.enemyBody.collisionMask) == 0)
+                        mask = AllHullsMask;
+                    else
+                    if (Physics.CapsuleCastNonAlloc(golemCapsule.bottom, golemCapsule.top, GolemHull.radius, direction, hitArray, distance, LayerIndex.enemyBody.collisionMask) == 0)
+                        mask = AllHullsMask ^ HullMask.BeetleQueen;
+                    else
+                    if (Physics.CapsuleCastNonAlloc(humanCapsule.bottom, humanCapsule.top, HumanHull.radius, direction, hitArray, distance, LayerIndex.enemyBody.collisionMask) == 0)
+                        mask = HullMask.Human;
+
+                    if (mask == HullMask.None)
                         continue;
-                    }
 
-                    nodes[i] = a;
-                    nodes[nni] = b;
+                    links.Add(new Link
+                    {
+                        distanceScore = (destinationNode.position - originNode.position).magnitude,
+                        nodeIndexA = new NodeIndex(i),
+                        nodeIndexB = new NodeIndex(nni),
+                        hullMask = (int)(mask),
+                        jumpHullMask = (int)(mask),
+                        maxSlope = 90
+                    });
                 }
-                uint linkCount = (uint)(resultsIndices.Count - skipped);
-                node.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = linkCount };
-                nodes[i] = node;
-                nextLinkSetIndex += (int)linkCount;
+                Profiler.EndSample();
+
+                originNode.linkListIndex = new LinkListIndex { index = nextLinkSetIndex, size = (uint)(links.Count - nextLinkSetIndex) };
+                nodes[i] = originNode;
             }
             Profiler.EndSample();
 

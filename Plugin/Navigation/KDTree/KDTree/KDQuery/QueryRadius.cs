@@ -25,9 +25,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace DataStructures.ViliWonka.KDTree {
+namespace DataStructures.ViliWonka.KDTree
+{
 
-    public partial class KDQuery {
+    public partial class KDQuery
+    {
 
         /// <summary>
         /// Search by radius method.
@@ -36,7 +38,8 @@ namespace DataStructures.ViliWonka.KDTree {
         /// <param name="queryPosition">Position</param>
         /// <param name="queryRadius">Radius</param>
         /// <param name="resultIndices">Initialized list, cleared.</param>
-        public void Radius(KDTree tree, Vector3 queryPosition, float queryRadius, List<int> resultIndices) {
+        public void Radius(KDTree tree, Vector3 queryPosition, float queryRadius, List<int> resultIndices, HashSet<int> whitelist = null, HashSet<int> blacklist = null)
+        {
 
             Reset();
 
@@ -54,19 +57,22 @@ namespace DataStructures.ViliWonka.KDTree {
 
             // KD search with pruning (don't visit areas which distance is more away than range)
             // Recursion done on Stack
-            while(LeftToProcess > 0) {
+            while (LeftToProcess > 0)
+            {
 
                 queryNode = PopFromQueue();
                 node = queryNode.node;
 
-                if(!node.Leaf) {
+                if (!node.Leaf)
+                {
 
                     int partitionAxis = node.partitionAxis;
                     float partitionCoord = node.partitionCoordinate;
 
                     Vector3 tempClosestPoint = queryNode.tempClosestPoint;
 
-                    if((tempClosestPoint[partitionAxis] - partitionCoord) < 0) {
+                    if ((tempClosestPoint[partitionAxis] - partitionCoord) < 0)
+                    {
 
                         // we already know we are inside negative bound/node,
                         // so we don't need to test for distance
@@ -81,13 +87,15 @@ namespace DataStructures.ViliWonka.KDTree {
                         float sqrDist = Vector3.SqrMagnitude(tempClosestPoint - queryPosition);
 
                         // testing other side
-                        if(node.positiveChild.Count != 0
-                        && sqrDist <= squaredRadius) {
+                        if (node.positiveChild.Count != 0
+                        && sqrDist <= squaredRadius)
+                        {
 
                             PushToQueue(node.positiveChild, tempClosestPoint);
                         }
                     }
-                    else {
+                    else
+                    {
 
                         // we already know we are inside positive bound/node,
                         // so we don't need to test for distance
@@ -103,24 +111,27 @@ namespace DataStructures.ViliWonka.KDTree {
                         float sqrDist = Vector3.SqrMagnitude(tempClosestPoint - queryPosition);
 
                         // testing other side
-                        if(node.negativeChild.Count != 0
-                        && sqrDist <= squaredRadius) {
+                        if (node.negativeChild.Count != 0
+                        && sqrDist <= squaredRadius)
+                        {
 
                             PushToQueue(node.negativeChild, tempClosestPoint);
                         }
                     }
                 }
-                else {
+                else
+                {
 
                     // LEAF
-                    for(int i = node.start; i < node.end; i++) {
-
+                    for (int i = node.start; i < node.end; i++)
+                    {
                         int index = permutation[i];
-
-                        if(Vector3.SqrMagnitude(points[index] - queryPosition) <= squaredRadius) {
-
-                            resultIndices.Add(index);
-                        }
+                        if (blacklist != null && blacklist.Contains(index)) continue;
+                        if (whitelist == null || whitelist.Contains(index))
+                            if (Vector3.SqrMagnitude(points[index] - queryPosition) <= squaredRadius)
+                            {
+                                resultIndices.Add(index);
+                            }
                     }
 
                 }

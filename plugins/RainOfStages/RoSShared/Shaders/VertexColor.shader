@@ -11,6 +11,7 @@
         Pass
         {
             Blend SrcAlpha OneMinusSrcAlpha
+            Cull Off
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag

@@ -27,7 +27,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         [SerializeField, HideInInspector]
         private TriangleCollection TriangleCollection;
 
-        public override void Build()
+        protected override void OnBuild()
         {
             var nodes = new List<Node>();
             var links = new List<Link>();

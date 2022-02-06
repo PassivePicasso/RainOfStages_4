@@ -67,25 +67,13 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public static UnityAction OnBuilt;
 
-        public bool rebuild;
-
-        private void Update()
+        public void Build()
         {
-            if (rebuild)
-            {
-                try
-                {
-                    Build();
-                    OnBuilt?.Invoke();
-                }
-                finally
-                {
-                    rebuild = false;
-                }
-            }
+            OnBuild();
+            OnBuilt?.Invoke();
         }
 
-        public abstract void Build();
+        protected abstract void OnBuild();
 
         protected void InitializeSeed(int seed)
         {

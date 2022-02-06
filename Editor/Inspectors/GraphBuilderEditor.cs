@@ -1,6 +1,9 @@
 ﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using static UnityEditor.EditorGUILayout;
 
 namespace PassivePicasso.RainOfStages.Designer.Inspectors
 {
@@ -8,36 +11,40 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
     public class GraphBuilderEditor : Editor
     {
         protected GraphBuilder builder;
+
+        protected virtual IEnumerable<string> ExcludedProperties()
+        {
+            yield break;
+        }
+
+        string[] excludedProperties;
+        private void OnEnable()
+        {
+            excludedProperties = ExcludedProperties().Prepend("m_Script").Prepend("nodeGraph").Distinct().ToArray();
+        }
+        protected virtual void OnDrawTitleButtons()
+        {
+
+        }
         public override void OnInspectorGUI()
         {
             builder = target as GraphBuilder;
             if (!builder) return;
 
-            if (GUILayout.Button("Build"))
+            using (new HorizontalScope())
             {
-                try
+                if (GUILayout.Button("Build"))
                 {
                     builder.Build();
                 }
-                finally
-                {
-                    builder.rebuild = false;
-                }
+                OnDrawTitleButtons();
             }
 
-            if (GUILayout.Button("Rebuild"))
+            EditorGUI.BeginChangeCheck();
+            DrawPropertiesExcluding(serializedObject, excludedProperties);
+            if (EditorGUI.EndChangeCheck())
             {
-                builder.rebuild = true;
-            }
-
-            if (GetType() == typeof(GraphBuilderEditor))
-            {
-                EditorGUI.BeginChangeCheck();
-                DrawPropertiesExcluding(serializedObject, "m_Script");
-                if (EditorGUI.EndChangeCheck())
-                {
-                    serializedObject.ApplyModifiedProperties();
-                }
+                serializedObject.ApplyModifiedProperties();
             }
 
             if (builder.nodeGraph)

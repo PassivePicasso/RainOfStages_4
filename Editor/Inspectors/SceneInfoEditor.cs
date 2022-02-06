@@ -81,6 +81,7 @@ namespace PassivePicasso.RainOfStages.Designer
         private static NodeGraph.Link[] groundLinks;
 
         private static Mesh airLinkLineMesh;
+        private static Mesh airLinkArrowMesh;
         private static Mesh airNodeMesh;
 
         private static Mesh groundLinkLineMesh;
@@ -160,7 +161,13 @@ namespace PassivePicasso.RainOfStages.Designer
             if (DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
             if (DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
             if (DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugAirLinks && airLinkLineMesh) Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugAirLinks)
+            {
+                if (airLinkLineMesh)
+                    Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                if (airLinkArrowMesh)
+                    Graphics.DrawMesh(airLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            }
             if (DebugGroundLinks)
             {
                 if (groundLinkLineMesh)
@@ -246,8 +253,8 @@ namespace PassivePicasso.RainOfStages.Designer
 
             if (groundNodeGraph)
             {
-                groundLinkLineMesh = GenerateGroundLinkMesh(LinkMeshType.line, groundNodes, groundLinks);
-                groundLinkArrowMesh = GenerateGroundLinkMesh(LinkMeshType.arrow, groundNodes, groundLinks);
+                groundLinkLineMesh = GenerateLinkMesh(LinkMeshType.line, groundNodes, groundLinks, VerticalOffset);
+                groundLinkArrowMesh = GenerateLinkMesh(LinkMeshType.arrow, groundNodes, groundLinks, VerticalOffset);
                 groundNodeMesh = GenerateNodeMesh(groundNodes);
                 teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
                 noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
@@ -255,7 +262,8 @@ namespace PassivePicasso.RainOfStages.Designer
 
             if (airNodeGraph)
             {
-                airLinkLineMesh = GenerateAirLinkMesh(airNodes, airLinks);
+                airLinkLineMesh = GenerateLinkMesh(LinkMeshType.line, airNodes, airLinks, 0);
+                airLinkArrowMesh = GenerateLinkMesh(LinkMeshType.arrow, airNodes, airLinks, 0);
                 airNodeMesh = GenerateNodeMesh(airNodes);
             }
 
@@ -335,7 +343,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return GetMesh(vertices, indices, colors, MeshTopology.Triangles);
         }
-        private static Mesh GenerateGroundLinkMesh(LinkMeshType linkMeshType, NodeGraph.Node[] nodes, NodeGraph.Link[] links)
+        private static Mesh GenerateLinkMesh(LinkMeshType linkMeshType, NodeGraph.Node[] nodes, NodeGraph.Link[] links, float verticalOffset)
         {
             if (linkMeshType != LinkMeshType.arrow && linkMeshType != LinkMeshType.line)
                 throw new System.ArgumentException(nameof(linkMeshType));
@@ -382,11 +390,12 @@ namespace PassivePicasso.RainOfStages.Designer
                         switch (linkMeshType)
                         {
                             case LinkMeshType.line:
-                                AddLine(new Vector3(nodeAPos.x, nodeAPos.y, nodeAPos.z),
-                                        new Vector3(nodeAPos.x, nodeAPos.y + VerticalOffset, nodeAPos.z), color);
+                                if (verticalOffset > 0)
+                                    AddLine(new Vector3(nodeAPos.x, nodeAPos.y, nodeAPos.z),
+                                            new Vector3(nodeAPos.x, nodeAPos.y + verticalOffset, nodeAPos.z), color);
 
-                                AddLine(new Vector3(nodeAPos.x, nodeAPos.y + VerticalOffset, nodeAPos.z),
-                                        new Vector3(nodeBPos.x, nodeBPos.y + VerticalOffset, nodeBPos.z), color);
+                                AddLine(new Vector3(nodeAPos.x, nodeAPos.y + verticalOffset, nodeAPos.z),
+                                        new Vector3(nodeBPos.x, nodeBPos.y + verticalOffset, nodeBPos.z), color);
                                 break;
                             case LinkMeshType.arrow:
                                 float halfArrowWidth = arrowSize / 2;
@@ -400,9 +409,9 @@ namespace PassivePicasso.RainOfStages.Designer
                                 var a = nodeAModA + (linkCross * halfArrowWidth);
                                 var b = nodeAModA - (linkCross * halfArrowWidth);
 
-                                AddTriangle(new Vector3(a.x, a.y + VerticalOffset, a.z),
-                                            new Vector3(b.x, b.y + VerticalOffset, b.z),
-                                            new Vector3(nodeAModB.x, nodeAModB.y + VerticalOffset, nodeAModB.z), color);
+                                AddTriangle(new Vector3(a.x, a.y + verticalOffset, a.z),
+                                            new Vector3(b.x, b.y + verticalOffset, b.z),
+                                            new Vector3(nodeAModB.x, nodeAModB.y + verticalOffset, nodeAModB.z), color);
                                 break;
                         }
                         break;
@@ -418,37 +427,6 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return null;
         }
-        private static Mesh GenerateAirLinkMesh(NodeGraph.Node[] nodes, NodeGraph.Link[] links)
-        {
-            var linkEnds = new List<Vector3>();
-            var linkEdges = new List<int>();
-            var colors = new List<Color>();
-            foreach (var link in links)
-            {
-                var nodeA = nodes[link.nodeIndexA.nodeIndex];
-                var nodeB = nodes[link.nodeIndexB.nodeIndex];
-                linkEnds.Add(nodeA.position);
-                linkEdges.Add(linkEdges.Count);
-                linkEnds.Add(nodeB.position);
-                linkEdges.Add(linkEdges.Count);
-                var addedColors = false;
-                foreach (var hull in masks)
-                    if (((HullMask)link.hullMask).HasFlag(hull))
-                    {
-                        colors.Add(colormap[hull]);
-                        colors.Add(colormap[hull]);
-                        addedColors = true;
-                        break;
-                    }
-                if (!addedColors)
-                {
-                    colors.Add(Color.black);
-                    colors.Add(Color.black);
-                }
-            }
-            return GetMesh(linkEnds, linkEdges, colors, MeshTopology.Lines);
-        }
-
         private static Mesh GetMesh(List<Vector3> linkEnds, List<int> linkEdges, List<Color> colors, MeshTopology topology)
         {
             var linkMesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
