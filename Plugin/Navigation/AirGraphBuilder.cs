@@ -18,7 +18,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public int seed;
         public float nodeSeparation = 8;
-        public float linkDistance = 16;
+        //public float linkDistance = 16;
         public int pointsPerLeaf;
         public int passes;
 
@@ -170,7 +170,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
                 //Find nodes within link range
                 Profiler.BeginSample("Query for nodes in linkDistance");
-                query.Radius(pointTree, nodes[i].position, linkDistance, resultsIndices, whitelist: null, blackList);
+                query.Radius(pointTree, nodes[i].position, nodeSeparation * 2.5f, resultsIndices, whitelist: null, blackList);
                 Profiler.EndSample();
                 Profiler.BeginSample("TryAddLink");
                 foreach (var nni in resultsIndices)
