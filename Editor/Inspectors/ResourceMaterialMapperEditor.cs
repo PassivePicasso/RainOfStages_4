@@ -46,8 +46,10 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
                 if (rebuild)
                     EditorAssets[rmm] = rmmAssets;
             }
+            else rebuild = true;
             if (!rebuild) return;
 
+            EditorAssets[rmm] = rmm.EditorAssets;
             var materials = rmm.EditorAssets
                           .Select(x => UnityEditor.AssetDatabase.GUIDToAssetPath(x))
                           .Select(x => UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(x))
@@ -68,6 +70,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
             {
                 rmm.ClonedAssets = defaultMaterials;
             }
+
         }
     }
 }
