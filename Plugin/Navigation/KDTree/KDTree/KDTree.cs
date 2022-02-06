@@ -25,11 +25,9 @@ SOFTWARE.
 // if you know for sure you will not use duplicate coordinates (all unique)
 #define KDTREE_DUPLICATES
 
-using System.Collections;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 using static UnityEngine.Profiling.Profiler;
 
 namespace DataStructures.ViliWonka.KDTree
