@@ -332,7 +332,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             for (float tf = 0; tf <= 1f; tf += 1f / 5f)
             {
                 var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, height * 1.25f) == 0)
+                if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, height * 1.5f) == 0)
                 {
                     isValid = false;
                     break;
