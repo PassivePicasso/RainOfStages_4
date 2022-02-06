@@ -12,7 +12,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [ExecuteAlways]
     public abstract class GraphBuilder : MonoBehaviour
     {
-        protected const HullMask AllHulls = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen);
+        protected const HullMask AllHullsMask = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen);
+
+        protected static HullMask[] HullMasks = new[] { HullMask.Human, HullMask.Golem, HullMask.BeetleQueen };
 
         public static System.Reflection.FieldInfo NodesField =
             typeof(NodeGraph).GetField("nodes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -49,6 +51,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         protected readonly HullDef HumanHull = HullDef.Find(HullClassification.Human);
         protected readonly HullDef GolemHull = HullDef.Find(HullClassification.Golem);
         protected readonly HullDef QueenHull = HullDef.Find(HullClassification.BeetleQueen);
+        private HullDef[] allHulls;
+        protected HullDef[] AllHulls => allHulls ?? (allHulls = new HullDef[] { HumanHull, GolemHull, QueenHull });
         protected float HumanHeight => HumanHull.height;
         protected float GolemHeight => GolemHull.height;
         protected float QueenHeight => QueenHull.height;

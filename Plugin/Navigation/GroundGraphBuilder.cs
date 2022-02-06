@@ -17,14 +17,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private int footprintSteps = 6;
 
-        public int seed = -1;
         public MeshFilter[] meshFilters;
-        public int pointCount = 1000;
-        public Vector3 TargetNormal = Vector3.up;
-        public float Margin = 0.4f;
         public float nodeSeparation = 8;
         public float linkDistance = 16;
-        public float floorForgiveness = 1f;
 
         [SerializeField, HideInInspector] private float lastMargin;
         [SerializeField, HideInInspector] private Vector3 lastTargetNormal;
@@ -34,11 +29,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public override void Build()
         {
-            InitializeSeed(seed);
             var nodes = new List<Node>();
             var links = new List<Link>();
             var pointTree = new KDTree();
-            pointTree.SetCount(pointCount);
+            pointTree.SetCount(1000);
             pointTree.Rebuild();
             var query = new KDQuery();
             var nodePoints = new List<Vector3>();
@@ -68,7 +62,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 TriangleCollection = new TriangleCollection(mesh.vertices, mesh.triangles);
 
                 Profiler.BeginSample("Find walkable triangles");
-                var walkableTris = TriangleCollection.WithNormal(TargetNormal, Margin).OrderByDescending(tri => (int)TriangleCollection.Area(tri)).ThenBy(tri => Random.value).ToList();
+                var walkableTris = TriangleCollection.WithNormal(Vector3.up, 0.4f).OrderByDescending(tri => (int)TriangleCollection.Area(tri)).ToList();
                 Profiler.EndSample();
 
                 if (walkableTris.Any())
@@ -81,104 +75,125 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private void GenerateNodeData(Transform transform, List<Vector3> nodePoints, List<Node> nodes, List<Triangle> walkableTris, KDTree pointTree, KDQuery query, NavigationProbe[] probes)
         {
-            int failures = 0;
-            var nodeArea = Mathf.PI * (nodeSeparation * nodeSeparation);
-            while (nodePoints.Count < pointCount && failures < pointCount * 4 && walkableTris.Count > 0)
+            foreach (var walkable in walkableTris)
             {
-                var triangle = walkableTris[0];
-                walkableTris.RemoveAt(0);
-                var area = Mathf.Max(1, TriangleCollection.Area(triangle) / nodeArea);
-                for (int i = 0; i < area; i++)
+                Profiler.BeginSample("Prepare Triangle Data");
+                var vertices = TriangleCollection.Vertices(walkable);
+                var edgeLengths = TriangleCollection.EdgeLengths(walkable);
+
+                Profiler.EndSample();
+
+                (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
+                if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
+                    edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
+
+                else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
+                    edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
+
+                else
+                    edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
+
+                float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
+                float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
+
+                for (float a = aStepSize; a < 1f; a += aStepSize)
                 {
-                    Profiler.BeginSample("Select random position in triangle");
-                    var position = transform.TransformPoint(TriangleCollection.PointInside(triangle));
-                    Profiler.EndSample();
-                    position = SurfacePosition(position);
-
-                    Profiler.BeginSample("Evaluate separation against kdtree");
-                    if (pointTree.RootNode != null)
+                    for (float b = bStepSize; b < 1f; b += bStepSize)
                     {
-                        resultsIndices.Clear();
-                        Profiler.BeginSample("Query point");
-                        query.Radius(pointTree, position, nodeSeparation, resultsIndices);
-                        Profiler.EndSample();
-                        if (resultsIndices.Any())
-                        {
-                            failures++;
-                            Profiler.EndSample();
-                            continue;
-                        }
+                        var position = TriangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
+                        TryPoint(position, transform, pointTree, query, probes, nodePoints, nodes);
                     }
-                    Profiler.EndSample();
-
-                    Profiler.BeginSample("Line of Sight to any probe");
-                    var validPosition = true;
-                    for (int j = 0; j < probes.Length; j++)
-                    {
-                        var probe = probes[j];
-                        var probePosition = probe.transform.position;
-                        var distanceToProbe = Vector3.Distance(probePosition, position);
-                        var direction = (probePosition - (position + HumanHeightOffset / 2)).normalized;
-                        if (distanceToProbe < probe.distance)
-                            if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
-                                if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
-                                    break;
-
-                        if (j == probes.Length - 1)
-                            validPosition = false;
-                    }
-                    Profiler.EndSample();
-                    if (!validPosition)
-                    {
-                        failures++;
-                        continue;
-                    }
-
-                    Profiler.BeginSample("Evaluate random position fit");
-
-                    var testPosition = position + Vector3.up;
-                    var mask = HullMask.None;
-
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (QueenHeightOffset / 2), QueenHeight / 2, colliders, LayerIndex.world.mask) == 0
-                     && FootprintFitsPosition(position, QueenHull.radius, QueenHull.height))
-                        mask = AllHulls;
-                    else
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (GolemHeightOffset / 2), GolemHeight / 2, colliders, LayerIndex.world.mask) == 0
-                     && FootprintFitsPosition(position, GolemHull.radius, GolemHull.height))
-                        mask = AllHulls ^ HullMask.BeetleQueen;
-                    else
-                    if (Physics.OverlapSphereNonAlloc(testPosition + (HumanHeightOffset / 2), HumanHeight / 2, colliders, LayerIndex.world.mask) == 0
-                     && FootprintFitsPosition(position, HumanHull.radius, HumanHull.height))
-                        mask = HullMask.Human;
-
-                    Profiler.EndSample();
-
-                    if (!mask.HasFlag(HullMask.Human))
-                    {
-                        failures++;
-                        continue;
-                    }
-
-                    var teleporterOk = TestTeleporterOK(position);
-                    var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.world.mask) > 0;
-                    var flags = (teleporterOk ? NodeFlags.TeleporterOK : NodeFlags.None) | (!upHit ? NodeFlags.NoCeiling : NodeFlags.None);
-
-
-                    Profiler.BeginSample("Store point");
-                    nodePoints.Add(position);
-                    nodes.Add(new Node
-                    {
-                        flags = flags,
-                        position = position,
-                        forbiddenHulls = AllHulls ^ mask,
-                    });
-                    Profiler.EndSample();
-
-                    Profiler.BeginSample("Update kdtree");
-                    pointTree.Build(nodePoints);
-                    Profiler.EndSample();
                 }
             }
+
+        }
+
+        void TryPoint(Vector3 position, Transform transform, KDTree pointTree, KDQuery query, NavigationProbe[] probes, List<Vector3> nodePoints, List<Node> nodes)
+        {
+            position = transform.TransformPoint(position);
+            position = SurfacePosition(position);
+
+            Profiler.BeginSample("Evaluate separation against kdtree");
+            if (pointTree.RootNode != null)
+            {
+                resultsIndices.Clear();
+                Profiler.BeginSample("Query point");
+                query.Radius(pointTree, position, nodeSeparation, resultsIndices);
+                Profiler.EndSample();
+                if (resultsIndices.Any())
+                {
+                    Profiler.EndSample();
+                    return;
+                }
+            }
+            Profiler.EndSample();
+
+
+            Profiler.BeginSample("Line of Sight to any probe");
+            var validPosition = true;
+            for (int j = 0; j < probes.Length; j++)
+            {
+                var probe = probes[j];
+                var probePosition = probe.transform.position;
+                var distanceToProbe = Vector3.Distance(probePosition, position);
+                var direction = (probePosition - (position + HumanHeightOffset / 2)).normalized;
+                if (distanceToProbe < probe.distance)
+                    if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
+                        if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
+                            break;
+
+                if (j == probes.Length - 1)
+                    validPosition = false;
+            }
+            Profiler.EndSample();
+            if (!validPosition)
+                return;
+
+            Profiler.BeginSample("Evaluate position fit");
+
+            var qRadius = QueenHull.radius * 1.25f;
+            var gRadius = GolemHull.radius * 1.25f;
+            var hRadius = HumanHull.radius * 1.25f;
+            var qOffset = qRadius * Vector3.up;
+            var gOffset = gRadius * Vector3.up;
+            var hOffset = hRadius * Vector3.up;
+            var testPosition = position + Vector3.up;
+            var mask = HullMask.None;
+
+            if (Physics.OverlapCapsuleNonAlloc(testPosition + qOffset, position + QueenHeightOffset - qOffset, qRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
+             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, 3f))
+                mask = AllHullsMask;
+            else
+            if (Physics.OverlapCapsuleNonAlloc(testPosition + gOffset, position + GolemHeightOffset - gOffset, gRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
+             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, 1f))
+                mask = AllHullsMask ^ HullMask.BeetleQueen;
+            else
+            if (Physics.OverlapCapsuleNonAlloc(testPosition + hOffset, position + HumanHeightOffset - hOffset, hRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
+             && FootprintFitsPosition(position, (float)hRadius, HumanHull.height, 0.2f))
+                mask = HullMask.Human;
+
+            Profiler.EndSample();
+
+            if (!mask.HasFlag(HullMask.Human))
+                return;
+
+            var teleporterOk = TestTeleporterOK(position);
+            var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.enemyBody.collisionMask) > 0;
+            var flags = (teleporterOk ? NodeFlags.TeleporterOK : NodeFlags.None) | (!upHit ? NodeFlags.NoCeiling : NodeFlags.None);
+
+            Profiler.BeginSample("Store point");
+            nodePoints.Add(position);
+            nodes.Add(new Node
+            {
+                flags = flags,
+                position = position,
+                forbiddenHulls = AllHullsMask ^ mask,
+            });
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Update kdtree");
+            pointTree.Build(nodePoints);
+            Profiler.EndSample();
         }
 
         private Vector3 SurfacePosition(Vector3 position)
@@ -223,8 +238,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                             nodeIndexA = new NodeIndex(staticNodes.IndexOf(staticNode)),
                             nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
                             distanceScore = staticNode.distanceScore,
-                            hullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
-                            jumpHullMask = (int)(AllHulls ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
+                            hullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
+                            jumpHullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
                         });
                     }
                     if (!staticNode.allowDynamicConnections || !staticNode.allowOutboundConnections)
@@ -235,60 +250,62 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 //Find nodes within link range
                 query.Radius(pointTree, nodes[i].position, linkDistance, resultsIndices);
                 resultsIndices.Remove(i);
-                int skipped = 0;
                 foreach (var nni in resultsIndices)
                 {
                     var otherNode = nodes[nni];
 
-                    if (nni < staticNodes.Count)
-                    {
-                        var staticNode = staticNodes[nni];
-                        if (!staticNode.allowDynamicConnections || !staticNode.allowInboundConnections)
-                        {
-                            skipped++;
-                            continue;
-                        }
-                    }
+                    if (nni < staticNodes.Count && (!staticNodes[nni].allowDynamicConnections || !staticNodes[nni].allowInboundConnections))
+                        continue;
 
                     var maxDist = Vector3.Distance(node.position, otherNode.position);
                     Vector3 direction = (otherNode.position - node.position).normalized;
 
-                    var testStart = node.position + Vector3.up * HumanHeight;
-                    var testStop = otherNode.position + Vector3.up * HumanHeight;
-                    var isValid = true;
-                    for (float tf = 0; tf <= 1f; tf += 1f / 5f)
+                    foreach (var hullMask in HullMasks)
                     {
-                        var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                        if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, HumanHeight * 2 + 1) == 0)
+                        HullDef hull = default;
+                        switch (hullMask)
                         {
-                            isValid = false;
-                            break;
+                            case HullMask.BeetleQueen:
+                                hull = QueenHull;
+                                break;
+                            case HullMask.Golem:
+                                hull = GolemHull;
+                                break;
+                            case HullMask.Human:
+                                hull = HumanHull;
+                                break;
+                        }
+                        bool isValid = CheckHull(node, otherNode, maxDist, direction, hull);
+                        if (isValid)
+                        {
+                            links.Add(new Link
+                            {
+                                distanceScore = (otherNode.position - node.position).magnitude,
+                                nodeIndexA = new NodeIndex(i),
+                                nodeIndexB = new NodeIndex(nni),
+                                hullMask = (int)hullMask,
+                                jumpHullMask = (int)hullMask,
+                                minJumpHeight = 0,
+                                maxSlope = 90,
+                                gateIndex = (byte)otherNode.gateIndex
+                            });
                         }
                     }
-                    if (Physics.SphereCastNonAlloc(testStart, HumanHull.radius, direction, hitArray, maxDist) > 0)
-                        isValid = false;
-
-                    if (Physics.SphereCastNonAlloc(testStop, HumanHull.radius, -direction, hitArray, maxDist) > 0)
-                        isValid = false;
-
-                    if (!isValid)
-                    {
-                        skipped++;
-                        continue;
-                    }
-
-                    var mask = (AllHulls ^ (otherNode.forbiddenHulls | node.forbiddenHulls));
-                    links.Add(new Link
-                    {
-                        distanceScore = Mathf.Sqrt((otherNode.position - node.position).sqrMagnitude),
-                        nodeIndexA = new NodeIndex(i),
-                        nodeIndexB = new NodeIndex(nni),
-                        hullMask = (int)mask,
-                        jumpHullMask = (int)mask,
-                        minJumpHeight = 0,
-                        maxSlope = 90,
-                        gateIndex = (byte)otherNode.gateIndex
-                    });
+                    //if (CheckHull(node, otherNode, maxDist, direction, HumanHull))
+                    //{
+                    //    var mask = (AllHullsMask ^ (otherNode.forbiddenHulls | node.forbiddenHulls));
+                    //    links.Add(new Link
+                    //    {
+                    //        distanceScore = (otherNode.position - node.position).magnitude,
+                    //        nodeIndexA = new NodeIndex(i),
+                    //        nodeIndexB = new NodeIndex(nni),
+                    //        hullMask = (int)mask,
+                    //        jumpHullMask = (int)mask,
+                    //        minJumpHeight = 0,
+                    //        maxSlope = 90,
+                    //        gateIndex = (byte)otherNode.gateIndex
+                    //    });
+                    //}
                 }
             }
 
@@ -305,7 +322,32 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Profiler.EndSample();
         }
 
-        public bool FootprintFitsPosition(Vector3 position, float radius, float height)
+        private bool CheckHull(Node node, Node otherNode, float maxDist, Vector3 direction, HullDef hull)
+        {
+            float height = hull.height;
+            float radius = hull.radius;
+            var testStart = node.position + Vector3.up * height;
+            var testStop = otherNode.position + Vector3.up * height;
+            var isValid = true;
+            for (float tf = 0; tf <= 1f; tf += 1f / 5f)
+            {
+                var testPosition = Vector3.Lerp(testStart, testStop, tf);
+                if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, height * 1.25f) == 0)
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid && Physics.SphereCastNonAlloc(node.position + (Vector3.up * (radius + 0.5f)), radius, direction, hitArray, maxDist) > 0)
+                isValid = false;
+
+            if (isValid && Physics.SphereCastNonAlloc(otherNode.position + (Vector3.up * (radius + 0.5f)), radius, -direction, hitArray, maxDist) > 0)
+                isValid = false;
+            return isValid;
+        }
+
+        public bool FootprintFitsPosition(Vector3 position, float radius, float height, float forgiveness)
         {
             int steps = footprintSteps;
             float degrees = 360f / (float)steps;
@@ -314,8 +356,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             for (int index = 0; index < steps; ++index)
             {
                 direction = rotation * direction;
-                var ray = new Ray(position + direction + (Vector3.up * height * 0.5F), Vector3.down);
-                if (Physics.RaycastNonAlloc(ray, hitArray, height + (1 + floorForgiveness), LayerIndex.world.mask) == 0)
+                var ray = new Ray(position + direction + (Vector3.up * height), Vector3.down);
+                if (Physics.RaycastNonAlloc(ray, hitArray, height + forgiveness, LayerIndex.enemyBody.collisionMask) == 0)
                     return false;
             }
             return true;
@@ -327,7 +369,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             if (Physics.OverlapSphereNonAlloc(position + Vector3.up * (radius + 1), radius, colliders) > 0)
                 return false;
 
-            return FootprintFitsPosition(position, 10, 7f);
+            return FootprintFitsPosition(position, 10, 7f, 2);
         }
     }
 }

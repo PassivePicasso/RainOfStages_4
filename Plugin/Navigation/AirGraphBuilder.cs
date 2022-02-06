@@ -124,10 +124,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var queenCapsule = QueenCapsule(a.position + (Vector3.down * QueenHeight / 2));
 
             if (Physics.CapsuleCastNonAlloc(queenCapsule.top, queenCapsule.bottom, QueenHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
-                mask = AllHulls;
+                mask = AllHullsMask;
             else
             if (Physics.CapsuleCastNonAlloc(golemCapsule.top, golemCapsule.bottom, GolemHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
-                mask = AllHulls ^ HullMask.BeetleQueen;
+                mask = AllHullsMask ^ HullMask.BeetleQueen;
             else
             if (Physics.CapsuleCastNonAlloc(humanCapsule.top, humanCapsule.bottom, HumanHull.radius * 1.5f, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) == 0)
                 mask = HullMask.Human;

@@ -32,19 +32,44 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public Vector3 PointInside(Triangle triangle)
         {
-            var vertexA = vertices[triangle.IndexA];
-            var vertexB = vertices[triangle.IndexB];
-            var vertexC = vertices[triangle.IndexC];
+            return PointInside(vertices[triangle.IndexA], vertices[triangle.IndexB], vertices[triangle.IndexC]);
+        }
+
+        public Vector3 PointInside(Triangle triangle, float a, float b)
+        {
+            return PointInside(vertices[triangle.IndexA], vertices[triangle.IndexB], vertices[triangle.IndexC], a, b);
+        }
+
+        public Vector3 PointInside(Vector3 vertexA, Vector3 vertexB, Vector3 vertexC)
+        {
             var a = Random.value;
             var b = Random.value;
-            var modA = (1 - Mathf.Sqrt(a)) * vertexA;
-            var modB = (Mathf.Sqrt(a) * (1 - b)) * vertexB;
-            var modC = (b * Mathf.Sqrt(a)) * vertexC;
+            Vector3 result = PointInside(vertexA, vertexB, vertexC, a, b);
+            return result;
+        }
+
+        public Vector3 PointInside(Vector3 vertexA, Vector3 vertexB, Vector3 vertexC, float a, float b)
+        {
+            Vector3 va = vertexA;
+            Vector3 vb = vertexB;
+            Vector3 vc = vertexC;
+            var modA = (1 - Mathf.Sqrt(a)) * va;
+            var modB = (Mathf.Sqrt(a) * (1 - b)) * vb;
+            var modC = (b * Mathf.Sqrt(a)) * vc;
 
             var result = modA + modB + modC;
             return result;
         }
+        public Vector3 PointInsideNaive(Vector3 vertexA, Vector3 vertexB, Vector3 vertexC, float ta, float tb)
+        {
+            var ab = Vector3.Lerp(vertexA, vertexB, ta);
+            var ac = Vector3.Lerp(vertexA, vertexC, ta);
+            var abac = Vector3.Lerp(ab, ac, tb);
+            return abac;
+        }
 
+
+        public (Vector3 a, Vector3 b, Vector3 c) Vertices(Triangle triangle) => (vertices[triangle.IndexA], vertices[triangle.IndexB], vertices[triangle.IndexC]);
 
         public TriangleCollection(Vector3[] vertices, int[] indices) => Update(vertices, indices);
 
@@ -86,7 +111,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         {
             Profiler.BeginSample("Neighborize Triangles");
             lookup = new Dictionary<(int low, int high), (int left, int right)>();
-            for (int i = 0; i < triangles.Count; i ++)
+            for (int i = 0; i < triangles.Count; i++)
             {
                 var tri = triangles[i];
                 var ab = Index(tri.IndexA, tri.IndexB);
@@ -138,6 +163,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var baseLength = Vector3.Distance(b, c);
             var area = (baseLength * height) / 2;
             return area;
+        }
+
+        public (float ab, float bc, float ca) EdgeLengths(Triangle triangle)
+        {
+            var a = vertices[triangle.IndexA];
+            var b = vertices[triangle.IndexB];
+            var c = vertices[triangle.IndexC];
+
+            return (Vector3.Distance(a, b), Vector3.Distance(b, c), Vector3.Distance(c, a));
         }
 
     }
