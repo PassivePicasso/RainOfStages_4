@@ -59,58 +59,73 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             foreach (var filter in meshFilters)
             {
                 var mesh = filter.sharedMesh;
-                TriangleCollection = new TriangleCollection(mesh.vertices, mesh.triangles);
+                TriangleCollection = new TriangleCollection(mesh.vertices.Select(v => filter.transform.TransformPoint(v)).ToArray(), mesh.triangles);
 
                 Profiler.BeginSample("Find walkable triangles");
-                var walkableTris = TriangleCollection.WithNormal(Vector3.up, 0.4f).OrderByDescending(tri => (int)TriangleCollection.Area(tri)).ToList();
+                var walkableTris = TriangleCollection.WithNormal(Vector3.up, 1f).OrderByDescending(tri => (int)TriangleCollection.Area(tri)).ToList();
                 Profiler.EndSample();
 
                 if (walkableTris.Any())
-                    GenerateNodeData(filter.transform, nodePoints, nodes, walkableTris, pointTree, query, probes);
+                {
+                    foreach (var walkable in walkableTris)
+                    {
+                        Profiler.BeginSample("Prepare Triangle Data");
+                        var vertices = TriangleCollection.Vertices(walkable);
+                        var edgeLengths = TriangleCollection.EdgeLengths(walkable);
+                        var inRange = false;
+
+                        foreach (var probe in probes)
+                        {
+                            if (Vector3.Distance(vertices.a, probe.transform.position) < probe.distance)
+                            {
+                                inRange = true;
+                                break;
+                            }
+                            if (Vector3.Distance(vertices.b, probe.transform.position) < probe.distance)
+                            {
+                                inRange = true;
+                                break;
+                            }
+                            if (Vector3.Distance(vertices.c, probe.transform.position) < probe.distance)
+                            {
+                                inRange = true;
+                                break;
+                            }
+                        }
+                        Profiler.EndSample();
+                        if (!inRange) continue;
+
+                        (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
+                        if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
+                            edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
+
+                        else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
+                            edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
+
+                        else
+                            edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
+
+                        float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
+                        float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
+
+                        for (float a = aStepSize; a < 1f; a += aStepSize)
+                        {
+                            for (float b = bStepSize; b < 1f; b += bStepSize)
+                            {
+                                var position = TriangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
+                                TryPoint(position, pointTree, query, probes, nodePoints, nodes);
+                            }
+                        }
+                    }
+                }
             }
 
             LinkNodes(nodes, links, pointTree, query, staticNodes);
             Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
         }
 
-        private void GenerateNodeData(Transform transform, List<Vector3> nodePoints, List<Node> nodes, List<Triangle> walkableTris, KDTree pointTree, KDQuery query, NavigationProbe[] probes)
+        void TryPoint(Vector3 position, KDTree pointTree, KDQuery query, NavigationProbe[] probes, List<Vector3> nodePoints, List<Node> nodes)
         {
-            foreach (var walkable in walkableTris)
-            {
-                Profiler.BeginSample("Prepare Triangle Data");
-                var vertices = TriangleCollection.Vertices(walkable);
-                var edgeLengths = TriangleCollection.EdgeLengths(walkable);
-
-                Profiler.EndSample();
-
-                (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
-                if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
-                    edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
-
-                else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
-                    edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
-
-                else
-                    edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
-
-                float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
-                float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
-
-                for (float a = aStepSize; a < 1f; a += aStepSize)
-                {
-                    for (float b = bStepSize; b < 1f; b += bStepSize)
-                    {
-                        var position = TriangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
-                        TryPoint(position, transform, pointTree, query, probes, nodePoints, nodes);
-                    }
-                }
-            }
-
-        }
-
-        void TryPoint(Vector3 position, Transform transform, KDTree pointTree, KDQuery query, NavigationProbe[] probes, List<Vector3> nodePoints, List<Node> nodes)
-        {
-            position = transform.TransformPoint(position);
             position = SurfacePosition(position);
 
             Profiler.BeginSample("Evaluate separation against kdtree");
@@ -165,7 +180,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 mask = AllHullsMask;
             else
             if (Physics.OverlapCapsuleNonAlloc(testPosition + gOffset, position + GolemHeightOffset - gOffset, gRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, 1f))
+             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, 2f))
                 mask = AllHullsMask ^ HullMask.BeetleQueen;
             else
             if (Physics.OverlapCapsuleNonAlloc(testPosition + hOffset, position + HumanHeightOffset - hOffset, hRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
