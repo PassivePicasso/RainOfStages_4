@@ -10,7 +10,19 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public Color navigationProbeColor = Color.green;
 
         public float distance = 15;
+        private float lastDistance = float.MinValue;
         public bool drawVolumeSphere = false;
+
+
+        void Update()
+        {
+            if (transform.hasChanged || lastDistance != distance)
+            {
+                transform.hasChanged = false;
+                lastDistance = distance;
+                FindObjectOfType<GroundGraphBuilder>().UpdateTriangleCollections();
+            }
+        }
 
         void OnDrawGizmos()
         {

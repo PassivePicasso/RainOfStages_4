@@ -182,6 +182,8 @@ namespace PassivePicasso.RainOfStages.Designer
             if (repaint)
             {
                 var sceneInfo = FindObjectOfType<SceneInfo>();
+                if (!sceneInfo) return;
+
                 var serializedObject = new SerializedObject(sceneInfo);
                 groundNodeGraph = (NodeGraph)serializedObject.FindProperty("groundNodesAsset").objectReferenceValue;
                 if (groundNodeGraph)
