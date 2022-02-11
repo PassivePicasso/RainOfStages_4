@@ -8,12 +8,19 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [Serializable]
     public struct Triangle : IEquatable<Triangle>
     {
+        [SerializeField]
         public int IndexA;
+        [SerializeField]
         public int IndexB;
+        [SerializeField]
         public int IndexC;
+        [SerializeField]
         public int NeighborAB;
+        [SerializeField]
         public int NeighborBC;
+        [SerializeField]
         public int NeighborCA;
+        [SerializeField]
         public Plane Plane;
 
         public Triangle Opposite(int index, TriangleCollection collection)
@@ -61,7 +68,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 NeighborCA = otherIndex;
             Profiler.EndSample();
         }
-
         public override bool Equals(object obj)
         {
             return obj is Triangle triangle && Equals(triangle);

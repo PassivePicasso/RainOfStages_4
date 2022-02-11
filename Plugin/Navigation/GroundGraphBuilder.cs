@@ -1,11 +1,12 @@
 ﻿using DataStructures.ViliWonka.KDTree;
-using PassivePicasso.RainOfStages.Plugin.Utility;
 using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
+using static PassivePicasso.RainOfStages.Plugin.Utilities.HullHelper;
+using static PassivePicasso.RainOfStages.Plugin.Utilities.PhysicsHelper;
 using static RoR2.Navigation.NodeGraph;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
@@ -16,34 +17,20 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public static System.Reflection.FieldInfo nodeGraphAssetField =
             typeof(SceneInfo).GetField($"groundNodesAsset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-        private int footprintSteps = 6;
-
-        public MeshFilter[] meshFilters;
         public float nodeSeparation = 8;
         public float marginFromUp = 0.5f;
 
         [SerializeField, HideInInspector] private float lastMargin;
         [SerializeField, HideInInspector] private Vector3 lastTargetNormal;
 
-        [SerializeField, HideInInspector]
-        private List<TriangleCollection> TriangleCollection;
-        private List<List<Triangle>> SelectedTriangles;
-
-        public Material previewMaterial;
-
-        private void Update()
-        {
-
-        }
         protected override void OnBuild()
         {
+            var addedIndices = new HashSet<int>();
+            var blackList = new HashSet<int>();
             var nodes = new List<Node>();
             var links = new List<Link>();
             var pointTree = new KDTree();
-            pointTree.SetCount(1000);
-            pointTree.Rebuild();
             var query = new KDQuery();
-            var nodePoints = new List<Vector3>();
 
             var probes = FindObjectsOfType<NavigationProbe>()
                 .Where(np => np.isActiveAndEnabled)
@@ -53,7 +40,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 var staticNode = staticNodes[i];
                 var position = SurfacePosition(staticNode.position);
-                nodePoints.Add(position);
                 Node item = new Node
                 {
                     position = position,
@@ -63,133 +49,69 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 };
                 nodes.Add(item);
             }
-            UpdateTriangleCollections(probes);
 
-            for (int i = 0; i < TriangleCollection.Count; i++)
+            Profiler.BeginSample("Get Points");
+            var groundNodes = probes.SelectMany(p => p.GroundNodes).ToArray();
+            int mapSize = nodes.Count + groundNodes.Length;
+            var expandedProbes = new NavigationProbe[mapSize];
+            var nodePoints = new Vector3[mapSize];
+
+            for (int i = 0; i < staticNodes.Count; i++)
             {
-                var triangleCollection = TriangleCollection[i];
-                var triangles = SelectedTriangles[i];
-                if (triangles.Any())
+                expandedProbes[i] = probes.OrderBy(probe => Vector3.Distance(staticNodes[i].position, probe.transform.position)).First();
+                nodePoints[i] = staticNodes[i].position;
+            }
+
+            int index = 0;
+            for (int i = 0; i < probes.Length; i++)
+            {
+                for (int k = 0; k < probes[i].GroundNodes.Count; k++)
                 {
-                    foreach (var walkable in triangles)
+                    expandedProbes[index] = probes[i];
+                    nodePoints[index] = probes[i].GroundNodes[k].position;
+                    index++;
+                }
+            }
+
+            nodes.AddRange(groundNodes);
+            Profiler.BeginSample("Update KDTree");
+            pointTree.Build(nodePoints, 64);
+            Profiler.EndSample();
+
+            Profiler.EndSample();
+
+            var probeNodes = new List<(Node, NavigationProbe)>();
+            Profiler.BeginSample("Evaluate separation against KDTree");
+
+            for (int i = 0; i < nodes.Count; i++)
+                if (pointTree.RootNode != null)
+                {
+                    if (i < staticNodes.Count)
                     {
-                        var vertices = triangleCollection.Vertices(walkable);
-                        var edgeLengths = triangleCollection.EdgeLengths(walkable);
-
-                        (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
-                        if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
-                            edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
-
-                        else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
-                            edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
-
-                        else
-                            edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
-
-                        float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
-                        float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
-
-                        for (float a = aStepSize; a < 1f; a += aStepSize)
-                        {
-                            for (float b = bStepSize; b < 1f; b += bStepSize)
-                            {
-                                var position = triangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
-                                TryPoint(position, pointTree, query, probes, nodePoints, nodes);
-                            }
-                        }
+                        addedIndices.Add(i);
+                        continue;
                     }
-                }
-            }
-
-            LinkNodes(nodes, links, pointTree, query, staticNodes);
-            Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
-        }
-
-        void TryPoint(Vector3 position, KDTree pointTree, KDQuery query, NavigationProbe[] probes, List<Vector3> nodePoints, List<Node> nodes)
-        {
-            position = SurfacePosition(position);
-
-            Profiler.BeginSample("Evaluate separation against kdtree");
-            if (pointTree.RootNode != null)
-            {
-                resultsIndices.Clear();
-                Profiler.BeginSample("Query point");
-                query.Radius(pointTree, position, nodeSeparation, resultsIndices);
-                Profiler.EndSample();
-                if (resultsIndices.Any())
-                {
+                    resultsIndices.Clear();
+                    Profiler.BeginSample("Query point");
+                    query.Radius(pointTree, nodePoints[i], expandedProbes[i].nodeSeparation, resultsIndices, whitelist: addedIndices);
                     Profiler.EndSample();
-                    return;
+                    if (resultsIndices.Count > 0)
+                    {
+                        continue;
+                    }
+                    addedIndices.Add(i);
                 }
-            }
             Profiler.EndSample();
 
 
-            Profiler.BeginSample("Line of Sight to any probe");
-            var validPosition = true;
-            for (int j = 0; j < probes.Length; j++)
-            {
-                var probe = probes[j];
-                var probePosition = probe.transform.position;
-                var distanceToProbe = Vector3.Distance(probePosition, position);
-                var direction = (probePosition - (position + HumanHeightOffset / 2)).normalized;
-                if (distanceToProbe < probe.distance)
-                    if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
-                        if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
-                            break;
-
-                if (j == probes.Length - 1)
-                    validPosition = false;
-            }
-            Profiler.EndSample();
-            if (!validPosition)
-                return;
-
-            Profiler.BeginSample("Evaluate position fit");
-
-            var qRadius = QueenHull.radius * 1.25f;
-            var gRadius = GolemHull.radius * 1.25f;
-            var hRadius = HumanHull.radius * 1.25f;
-            var qOffset = qRadius * Vector3.up;
-            var gOffset = gRadius * Vector3.up;
-            var hOffset = hRadius * Vector3.up;
-            var testPosition = position + Vector3.up;
-            var mask = HullMask.None;
-            
-            if (Physics.OverlapCapsuleNonAlloc(testPosition + qOffset, position + QueenHeightOffset - qOffset, qRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, QueenHull.radius/2))
-                mask = AllHullsMask;
-            else
-            if (Physics.OverlapCapsuleNonAlloc(testPosition + gOffset, position + GolemHeightOffset - gOffset, gRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, GolemHull.radius / 2))
-                mask = AllHullsMask ^ HullMask.BeetleQueen;
-            else
-            if (Physics.OverlapCapsuleNonAlloc(testPosition + hOffset, position + HumanHeightOffset - hOffset, hRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)hRadius, HumanHull.height, HumanHull.radius / 2))
-                mask = HullMask.Human;
-
+            Profiler.BeginSample("Build Final Data Sets");
+            nodes = addedIndices.Select(i => nodes[i]).ToList();
+            expandedProbes = addedIndices.Select(i => expandedProbes[i]).ToArray();
+            pointTree.Build(nodes.Select(n => n.position).ToArray());
             Profiler.EndSample();
 
-            if (!mask.HasFlag(HullMask.Human))
-                return;
-
-            var teleporterOk = TestTeleporterOK(position);
-            var upHit = Physics.RaycastNonAlloc(new Ray(position, Vector3.up), hitArray, 50, LayerIndex.enemyBody.collisionMask) > 0;
-            var flags = (teleporterOk ? NodeFlags.TeleporterOK : NodeFlags.None) | (!upHit ? NodeFlags.NoCeiling : NodeFlags.None);
-
-            Profiler.BeginSample("Store point");
-            nodePoints.Add(position);
-            nodes.Add(new Node
-            {
-                flags = flags,
-                position = position,
-                forbiddenHulls = AllHullsMask ^ mask,
-            });
-            Profiler.EndSample();
-
-            Profiler.BeginSample("Update kdtree");
-            pointTree.Build(nodePoints);
-            Profiler.EndSample();
+            LinkNodes(nodes, links, expandedProbes, pointTree, query, staticNodes);
+            Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
         }
 
         private Vector3 SurfacePosition(Vector3 position)
@@ -216,7 +138,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return position;
         }
 
-        public void LinkNodes(List<Node> nodes, List<Link> links, KDTree pointTree, KDQuery query, List<StaticNode> staticNodes)
+        public void LinkNodes(List<Node> nodes, List<Link> links, NavigationProbe[] probes, KDTree pointTree, KDQuery query, List<StaticNode> staticNodes)
         {
             var resultsIndices = new List<int>();
             Profiler.BeginSample("Construct node links");
@@ -244,7 +166,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
                 resultsIndices.Clear();
                 //Find nodes within link range
-                query.Radius(pointTree, nodes[i].position, nodeSeparation * 2.5f, resultsIndices);
+                query.Radius(pointTree, nodes[i].position, probes[i].nodeSeparation * 2.5f, resultsIndices);
                 resultsIndices.Remove(i);
                 foreach (var nni in resultsIndices)
                 {
@@ -329,116 +251,5 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return isValid;
         }
 
-        public bool FootprintFitsPosition(Vector3 position, float radius, float height, float forgiveness)
-        {
-            int steps = footprintSteps;
-            float degrees = 360f / (float)steps;
-            var direction = Vector3.forward * radius;
-            var rotation = Quaternion.AngleAxis(degrees, Vector3.up);
-            for (int index = 0; index < steps; ++index)
-            {
-                direction = rotation * direction;
-                var ray = new Ray(position + direction + (Vector3.up * height), Vector3.down);
-                if (Physics.RaycastNonAlloc(ray, hitArray, height + forgiveness, LayerIndex.enemyBody.collisionMask) == 0)
-                    return false;
-            }
-            return true;
-        }
-
-        bool TestTeleporterOK(Vector3 position)
-        {
-            float radius = 15f;
-            if (Physics.OverlapSphereNonAlloc(position + Vector3.up * (radius + 1), radius, colliders) > 0)
-                return false;
-
-            return FootprintFitsPosition(position, 10, 7f, 2);
-        }
-
-        private void OnRenderObject()
-        {
-#if UNITY_EDITOR
-            if (!previewMaterial)
-                previewMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "vertexcolor.mat"));
-#endif
-            if (!previewMaterial) return;
-            if (TriangleCollection == null || !TriangleCollection.Any()) return;
-            if (SelectedTriangles == null || !SelectedTriangles.Any()) return;
-
-            previewMaterial.SetPass(0);
-
-            try
-            {
-                GL.PushMatrix();
-                GL.Begin(GL.TRIANGLES);
-                GL.Color(new Color(0, 1, 1, 0.25f));
-                for (int i = 0; i < TriangleCollection.Count; i++)
-                {
-                    var triangleCollection = TriangleCollection[i];
-                    var triangles = SelectedTriangles[i];
-                    foreach (var triangle in triangles)
-                    {
-                        var vertices = triangleCollection.Vertices(triangle);
-                        GL.Vertex(vertices.a + Vector3.up * 0.25f);
-                        GL.Vertex(vertices.b + Vector3.up * 0.25f);
-                        GL.Vertex(vertices.c + Vector3.up * 0.25f);
-                    }
-                }
-            }
-            finally
-            {
-                GL.End();
-                GL.PopMatrix();
-            }
-        }
-
-        public void UpdateTriangleCollections(NavigationProbe[] probes = null)
-        {
-            if (probes == null)
-                probes = FindObjectsOfType<NavigationProbe>()
-                    .Where(np => np.isActiveAndEnabled)
-                    .ToArray();
-
-            Profiler.BeginSample("Find walkable triangles");
-            TriangleCollection = meshFilters.Select(filter =>
-            {
-                var mesh = filter.sharedMesh;
-                return new TriangleCollection(mesh.vertices.Select(v => filter.transform.TransformPoint(v)).ToArray(), mesh.triangles);
-            }).ToList();
-            SelectedTriangles = TriangleCollection.Select(tc =>
-            {
-                return tc.WithNormal(Vector3.up, marginFromUp)
-                         .Where(triangle =>
-                         {
-                             try
-                             {
-                                 Profiler.BeginSample("Prepare Triangle Data");
-                                 var vertices = tc.Vertices(triangle);
-                                 foreach (var probe in probes)
-                                     if (TestVertex(vertices.a, probe.transform.position, probe.distance)
-                                       || TestVertex(vertices.b, probe.transform.position, probe.distance)
-                                       || TestVertex(vertices.c, probe.transform.position, probe.distance))
-                                         return true;
-                             }
-                             finally
-                             {
-                                 Profiler.EndSample();
-                             }
-                             return false;
-                         })
-                         .OrderByDescending(tri => (int)tc.Area(tri))
-                         .ToList();
-            }).ToList();
-
-            Profiler.EndSample();
-        }
-
-        bool TestVertex(Vector3 vertex, Vector3 probePosition, float maxDistance)
-        {
-            float distance = Vector3.Distance(vertex, probePosition);
-            if (distance < maxDistance)
-                if (Physics.RaycastNonAlloc(probePosition, (vertex - probePosition).normalized, hitArray, distance - 0.1f, LayerIndex.enemyBody.collisionMask) == 0)
-                    return true;
-            return false;
-        }
     }
 }

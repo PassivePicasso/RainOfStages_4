@@ -6,6 +6,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
 using static RoR2.Navigation.NodeGraph;
+using static PassivePicasso.RainOfStages.Plugin.Utilities.PhysicsHelper;
+using static PassivePicasso.RainOfStages.Plugin.Utilities.HullHelper;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {

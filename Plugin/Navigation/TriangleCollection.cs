@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -6,12 +7,13 @@ using UnityEngine.Profiling;
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
     [System.Serializable]
-    public class TriangleCollection
+    public struct TriangleCollection : IEnumerable<Triangle>
     {
-        private Dictionary<(int low, int high), (int left, int right)> lookup;
+        private static readonly Dictionary<int, int> vertexRemap = new Dictionary<int, int>();
+        private static readonly Dictionary<(int low, int high), (int left, int right)> lookup = new Dictionary<(int low, int high), (int left, int right)>();
 
         [SerializeField]
-        private List<Triangle> triangles = new List<Triangle>();
+        private List<Triangle> triangles;
         [SerializeField]
         private Vector3[] vertices;
         [SerializeField]
@@ -24,6 +26,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 return triangles[index];
             }
         }
+
+        public int Count => triangles.Count;
 
         public IEnumerable<Triangle> WithNormal(Vector3 normal, float margin)
         {
@@ -68,10 +72,62 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return abac;
         }
 
+        public bool ContainsDuplicate((Vector3 a, Vector3 b, Vector3 c) triangle)
+        {
+            var matches = vertices.Where(v => v == triangle.a || v == triangle.b || v == triangle.c).Any();
 
+            return matches;
+        }
         public (Vector3 a, Vector3 b, Vector3 c) Vertices(Triangle triangle) => (vertices[triangle.IndexA], vertices[triangle.IndexB], vertices[triangle.IndexC]);
 
-        public TriangleCollection(Vector3[] vertices, int[] indices) => Update(vertices, indices);
+        public TriangleCollection(Vector3[] vertices, int[] indices)
+        {
+            this.triangles = new List<Triangle>();
+            this.vertices = vertices;
+            this.indices = indices;
+            ConstructTriangles();
+        }
+
+        public TriangleCollection GetDetached(IEnumerable<Triangle> triangles)
+        {
+            int i = 0;
+            vertexRemap.Clear();
+            var indices = new List<int>();
+            var vertices = new List<Vector3>();
+            foreach (var triangle in triangles)
+            {
+                var (a, b, c) = Vertices(triangle);
+                Remap(triangle.IndexA, indices, vertices, a);
+                Remap(triangle.IndexB, indices, vertices, b);
+                Remap(triangle.IndexC, indices, vertices, c);
+            }
+
+            return new TriangleCollection(vertices.ToArray(), indices.ToArray());
+        }
+
+        void Remap(int index, List<int> indices, List<Vector3> vertices, Vector3 vertex)
+        {
+            if (vertexRemap.ContainsKey(index))
+            {
+                indices.Add(vertexRemap[index]);
+            }
+            else
+            {
+                var i = vertexRemap[index] = vertices.Count;
+                indices.Add(i);
+                vertices.Add(vertex);
+            }
+        }
+
+        public Mesh ToMesh()
+        {
+            var linkMesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            linkMesh.vertices = vertices;
+            linkMesh.triangles = indices;
+
+            return linkMesh;
+        }
+
 
         public void Update(Vector3[] vertices, int[] indices)
         {
@@ -107,10 +163,11 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Profiler.EndSample();
         }
 
+
         public void NeighborizeTriangles()
         {
             Profiler.BeginSample("Neighborize Triangles");
-            lookup = new Dictionary<(int low, int high), (int left, int right)>();
+            lookup.Clear();
             for (int i = 0; i < triangles.Count; i++)
             {
                 var tri = triangles[i];
@@ -174,5 +231,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return (Vector3.Distance(a, b), Vector3.Distance(b, c), Vector3.Distance(c, a));
         }
 
+        public IEnumerator<Triangle> GetEnumerator() => triangles.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => triangles.GetEnumerator();
     }
 }
