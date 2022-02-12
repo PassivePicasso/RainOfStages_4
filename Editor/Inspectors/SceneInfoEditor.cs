@@ -200,7 +200,7 @@ namespace PassivePicasso.RainOfStages.Designer
                 }
                 RegenerateMeshes();
 
-                SceneView.lastActiveSceneView.Repaint();
+                SceneView.lastActiveSceneView?.Repaint();
                 repaint = false;
             }
         }
