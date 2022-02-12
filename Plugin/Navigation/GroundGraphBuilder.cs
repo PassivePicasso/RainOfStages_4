@@ -365,14 +365,16 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Profiler.EndSample();
 
             Profiler.BeginSample("Collect Vertices and Indices");
-            var vertices = new List<Vector3>();
-            var indices = new List<int>();
+            var vertices = new List<Vector3>(meshFilters.Select(mf => mf.sharedMesh.vertices.Length).Sum());
+            var indices = new List<int>(meshFilters.Select(mf => mf.sharedMesh.triangles.Length).Sum());
             foreach (var meshFilter in meshFilters)
             {
                 indices.AddRange(meshFilter.sharedMesh.triangles.Select(i => i + vertices.Count));
                 vertices.AddRange(meshFilter.sharedMesh.vertices.Select(v => meshFilter.transform.TransformPoint(v)));
             }
             Profiler.EndSample();
+            var colors = new Dictionary<int, Color>(vertices.Count);
+
 
             Profiler.BeginSample("Construct TriangleCollection");
             TriangleCollection = new TriangleCollection(vertices, indices.ToArray());
@@ -383,10 +385,26 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 var triVerts = TriangleCollection.Vertices(triangle);
                 foreach (var probe in probes)
-                    if (TestVertex(triVerts.a, probe.transform.position, probe.distance)
-                      || TestVertex(triVerts.b, probe.transform.position, probe.distance)
-                      || TestVertex(triVerts.c, probe.transform.position, probe.distance))
+                {
+                    var seen = TestVertex(triVerts.a, probe.transform.position, probe.distance)
+                            || TestVertex(triVerts.b, probe.transform.position, probe.distance)
+                            || TestVertex(triVerts.c, probe.transform.position, probe.distance);
+                    if (seen)
+                    {
+                        if (!colors.ContainsKey(triangle.IndexA)) colors[triangle.IndexA] = probe.navigationProbeColor;
+                        else
+                            colors[triangle.IndexA] = Color.Lerp(colors[triangle.IndexA], probe.navigationProbeColor, 0.5f);
+
+                        if (!colors.ContainsKey(triangle.IndexB)) colors[triangle.IndexB] = probe.navigationProbeColor;
+                        else
+                            colors[triangle.IndexB] = Color.Lerp(colors[triangle.IndexB], probe.navigationProbeColor, 0.5f);
+
+                        if (!colors.ContainsKey(triangle.IndexC)) colors[triangle.IndexC] = probe.navigationProbeColor;
+                        else
+                            colors[triangle.IndexC] = Color.Lerp(colors[triangle.IndexC], probe.navigationProbeColor, 0.5f);
                         return true;
+                    }
+                }
                 return false;
             });
 
@@ -396,6 +414,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
             Profiler.BeginSample("Create Preview Mesh");
             mesh = TriangleCollection.ToMesh();
+            List<Color> inColors = colors.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+            mesh.SetColors(inColors);
             mesh.name = $"(Vector3.Dot(up, faceNormal) > 1-{marginFromUp})";
             Profiler.EndSample();
 

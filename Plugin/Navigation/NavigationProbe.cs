@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
     [ExecuteAlways]
     public class NavigationProbe : MonoBehaviour
     {
-        public Color navigationProbeColor = Color.green;
+        public Color navigationProbeColor = new Color(0, 1, 1, 0.5f);
 
         public float distance = 15;
         private float lastDistance = float.MinValue;
@@ -27,13 +25,14 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         void OnDrawGizmos()
         {
             Gizmos.matrix = Matrix4x4.identity;
-            Gizmos.color = navigationProbeColor;
-            Gizmos.DrawCube(transform.position, Vector3.one);
+            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 1);
+            Gizmos.DrawCube(transform.position, Vector3.one * 2);
 
-            if (!drawVolumeSphere) return;
-
-            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.25f);
-            Gizmos.DrawSphere(transform.position, distance);
+            if (drawVolumeSphere)
+            {
+                Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 0.25f);
+                Gizmos.DrawSphere(transform.position, distance);
+            }
         }
     }
 }

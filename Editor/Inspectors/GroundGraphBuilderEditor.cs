@@ -21,7 +21,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
         private static void Draw(Camera cam)
         {
             if (!previewMaterial)
-                previewMaterial = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "TransparentRed.mat"));
+                previewMaterial = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "VertexColor.mat"));
             if (!SceneView.currentDrawingSceneView?.camera)
                 return;
             var probes = Selection.GetFiltered<NavigationProbe>(SelectionMode.Deep);

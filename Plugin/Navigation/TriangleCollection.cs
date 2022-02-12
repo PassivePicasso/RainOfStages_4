@@ -127,15 +127,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return linkMesh;
         }
 
-
-        public void Update(List<Vector3> vertices, int[] indices)
-        {
-            this.vertices = vertices;
-            this.indices = indices;
-
-            ConstructTriangles();
-        }
-
         (int, int) Index(int a, int b) => (Mathf.Min(a, b), Mathf.Max(a, b));
         void ConstructTriangles()
         {
@@ -161,7 +152,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         //    MeshWelder.Weld(ref vertices, ref indices);
         //    Profiler.EndSample();
         //}
-
 
         public void NeighborizeTriangles()
         {
