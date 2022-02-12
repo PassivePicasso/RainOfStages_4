@@ -18,7 +18,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private int footprintSteps = 6;
 
-        public MeshFilter[] meshFilters;
         public float nodeSeparation = 8;
         public float marginFromUp = 0.5f;
 
@@ -26,15 +25,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         [SerializeField, HideInInspector] private Vector3 lastTargetNormal;
 
         [SerializeField, HideInInspector]
-        private List<TriangleCollection> TriangleCollection;
-        private List<List<Triangle>> SelectedTriangles;
+        private TriangleCollection TriangleCollection;
+        public Mesh mesh;// { get; private set; }
+        private MeshFilter[] meshFilters;
 
-        public Material previewMaterial;
-
-        private void Update()
-        {
-
-        }
         protected override void OnBuild()
         {
             var nodes = new List<Node>();
@@ -48,6 +42,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var probes = FindObjectsOfType<NavigationProbe>()
                 .Where(np => np.isActiveAndEnabled)
                 .ToArray();
+
             var staticNodes = StaticNode.StaticNodes;
             for (int i = 0; i < staticNodes.Count; i++)
             {
@@ -65,41 +60,34 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
             UpdateTriangleCollections(probes);
 
-            for (int i = 0; i < TriangleCollection.Count; i++)
+            foreach (var walkable in TriangleCollection)
             {
-                var triangleCollection = TriangleCollection[i];
-                var triangles = SelectedTriangles[i];
-                if (triangles.Any())
+                var vertices = TriangleCollection.Vertices(walkable);
+                var edgeLengths = TriangleCollection.EdgeLengths(walkable);
+
+                (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
+                if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
+                    edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
+
+                else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
+                    edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
+
+                else
+                    edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
+
+                float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
+                float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
+
+                for (float a = aStepSize; a < 1f; a += aStepSize)
                 {
-                    foreach (var walkable in triangles)
+                    for (float b = bStepSize; b < 1f; b += bStepSize)
                     {
-                        var vertices = triangleCollection.Vertices(walkable);
-                        var edgeLengths = triangleCollection.EdgeLengths(walkable);
-
-                        (float length, float adjacentLength, (Vector3 a, Vector3 b, Vector3 c) order) edge;
-                        if (edgeLengths.ab > edgeLengths.bc && edgeLengths.ab > edgeLengths.ca)
-                            edge = (edgeLengths.ab, edgeLengths.ca, (a: vertices.c, b: vertices.a, c: vertices.b));
-
-                        else if (edgeLengths.bc > edgeLengths.ca && edgeLengths.bc > edgeLengths.ab)
-                            edge = (edgeLengths.bc, edgeLengths.ab, (a: vertices.a, b: vertices.b, c: vertices.c));
-
-                        else
-                            edge = (edgeLengths.ca, edgeLengths.bc, (a: vertices.b, b: vertices.c, c: vertices.a));
-
-                        float aStepSize = 1f / (edge.length < nodeSeparation ? 3f : edge.length / nodeSeparation);
-                        float bStepSize = 1f / (edge.adjacentLength < nodeSeparation ? 3f : edge.adjacentLength / nodeSeparation);
-
-                        for (float a = aStepSize; a < 1f; a += aStepSize)
-                        {
-                            for (float b = bStepSize; b < 1f; b += bStepSize)
-                            {
-                                var position = triangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
-                                TryPoint(position, pointTree, query, probes, nodePoints, nodes);
-                            }
-                        }
+                        var position = TriangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
+                        TryPoint(position, pointTree, query, probes, nodePoints, nodes);
                     }
                 }
             }
+
 
             LinkNodes(nodes, links, pointTree, query, staticNodes);
             Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
@@ -155,9 +143,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var hOffset = hRadius * Vector3.up;
             var testPosition = position + Vector3.up;
             var mask = HullMask.None;
-            
+
             if (Physics.OverlapCapsuleNonAlloc(testPosition + qOffset, position + QueenHeightOffset - qOffset, qRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, QueenHull.radius/2))
+             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, QueenHull.radius / 2))
                 mask = AllHullsMask;
             else
             if (Physics.OverlapCapsuleNonAlloc(testPosition + gOffset, position + GolemHeightOffset - gOffset, gRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
@@ -305,28 +293,36 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private bool CheckHull(Node node, Node otherNode, float maxDist, Vector3 direction, HullDef hull)
         {
-            float height = hull.height;
-            float radius = hull.radius;
-            float offset = radius * 1.5f;
-            var offsetVector = Vector3.up * offset;
-            var heightOffsetVector = Vector3.up * height;
-            var testStart = node.position + offsetVector;
-            var testStop = otherNode.position + offsetVector;
-            var isValid = true;
-            for (float tf = 0; tf <= 1f; tf += 1f / 5f)
+            Profiler.BeginSample("Sample Hull");
+            try
             {
-                var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, offset * 1.2f) == 0)
+                float height = hull.height;
+                float radius = hull.radius;
+                float offset = radius * 1.5f;
+                var offsetVector = Vector3.up * offset;
+                var heightOffsetVector = Vector3.up * height;
+                var testStart = node.position + offsetVector;
+                var testStop = otherNode.position + offsetVector;
+                var isValid = true;
+                for (float tf = 0; tf <= 1f; tf += 1f / 5f)
                 {
-                    isValid = false;
-                    break;
+                    var testPosition = Vector3.Lerp(testStart, testStop, tf);
+                    if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, offset * 1.2f) == 0)
+                    {
+                        isValid = false;
+                        break;
+                    }
                 }
+
+                if (isValid && Physics.CapsuleCastNonAlloc(testStart, testStart + heightOffsetVector - offsetVector, radius, direction, hitArray, maxDist) > 0)
+                    isValid = false;
+
+                return isValid;
             }
-
-            if (isValid && Physics.CapsuleCastNonAlloc(testStart, testStart + heightOffsetVector - offsetVector, radius, direction, hitArray, maxDist) > 0)
-                isValid = false;
-
-            return isValid;
+            finally
+            {
+                Profiler.EndSample();
+            }
         }
 
         public bool FootprintFitsPosition(Vector3 position, float radius, float height, float forgiveness)
@@ -354,80 +350,54 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return FootprintFitsPosition(position, 10, 7f, 2);
         }
 
-        private void OnRenderObject()
-        {
-#if UNITY_EDITOR
-            if (!previewMaterial)
-                previewMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "vertexcolor.mat"));
-#endif
-            if (!previewMaterial) return;
-            if (TriangleCollection == null || !TriangleCollection.Any()) return;
-            if (SelectedTriangles == null || !SelectedTriangles.Any()) return;
-
-            previewMaterial.SetPass(0);
-
-            try
-            {
-                GL.PushMatrix();
-                GL.Begin(GL.TRIANGLES);
-                GL.Color(new Color(0, 1, 1, 0.25f));
-                for (int i = 0; i < TriangleCollection.Count; i++)
-                {
-                    var triangleCollection = TriangleCollection[i];
-                    var triangles = SelectedTriangles[i];
-                    foreach (var triangle in triangles)
-                    {
-                        var vertices = triangleCollection.Vertices(triangle);
-                        GL.Vertex(vertices.a + Vector3.up * 0.25f);
-                        GL.Vertex(vertices.b + Vector3.up * 0.25f);
-                        GL.Vertex(vertices.c + Vector3.up * 0.25f);
-                    }
-                }
-            }
-            finally
-            {
-                GL.End();
-                GL.PopMatrix();
-            }
-        }
-
         public void UpdateTriangleCollections(NavigationProbe[] probes = null)
         {
-            if (probes == null)
-                probes = FindObjectsOfType<NavigationProbe>()
-                    .Where(np => np.isActiveAndEnabled)
-                    .ToArray();
-
             Profiler.BeginSample("Find walkable triangles");
-            TriangleCollection = meshFilters.Select(filter =>
+            if (probes == null)
+                probes = FindObjectsOfType<NavigationProbe>();
+
+            Profiler.BeginSample("Collect MeshFilters");
+            meshFilters = probes.SelectMany(p =>
             {
-                var mesh = filter.sharedMesh;
-                return new TriangleCollection(mesh.vertices.Select(v => filter.transform.TransformPoint(v)).ToArray(), mesh.triangles);
-            }).ToList();
-            SelectedTriangles = TriangleCollection.Select(tc =>
+                var hits = Physics.OverlapSphereNonAlloc(p.transform.position, p.distance, colliders, LayerIndex.world.mask);
+                return colliders.Take(hits).SelectMany(collider => collider.GetComponents<MeshFilter>());
+            }).Distinct().ToArray();
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Collect Vertices and Indices");
+            var vertices = new List<Vector3>();
+            var indices = new List<int>();
+            foreach (var meshFilter in meshFilters)
             {
-                return tc.WithNormal(Vector3.up, marginFromUp)
-                         .Where(triangle =>
-                         {
-                             try
-                             {
-                                 Profiler.BeginSample("Prepare Triangle Data");
-                                 var vertices = tc.Vertices(triangle);
-                                 foreach (var probe in probes)
-                                     if (TestVertex(vertices.a, probe.transform.position, probe.distance)
-                                       || TestVertex(vertices.b, probe.transform.position, probe.distance)
-                                       || TestVertex(vertices.c, probe.transform.position, probe.distance))
-                                         return true;
-                             }
-                             finally
-                             {
-                                 Profiler.EndSample();
-                             }
-                             return false;
-                         })
-                         .OrderByDescending(tri => (int)tc.Area(tri))
-                         .ToList();
-            }).ToList();
+                indices.AddRange(meshFilter.sharedMesh.triangles.Select(i => i + vertices.Count));
+                vertices.AddRange(meshFilter.sharedMesh.vertices.Select(v => meshFilter.transform.TransformPoint(v)));
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Construct TriangleCollection");
+            TriangleCollection = new TriangleCollection(vertices, indices.ToArray());
+            Profiler.EndSample();
+
+            var upwardTriangles = TriangleCollection.WithNormal(Vector3.up, marginFromUp);
+            var upTrisWithLOS = upwardTriangles.Where(triangle =>
+            {
+                var triVerts = TriangleCollection.Vertices(triangle);
+                foreach (var probe in probes)
+                    if (TestVertex(triVerts.a, probe.transform.position, probe.distance)
+                      && TestVertex(triVerts.b, probe.transform.position, probe.distance)
+                      && TestVertex(triVerts.c, probe.transform.position, probe.distance))
+                        return true;
+                return false;
+            });
+
+            Profiler.BeginSample("Detach Found Triangles");
+            TriangleCollection = TriangleCollection.GetDetached(upTrisWithLOS);
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Create Preview Mesh");
+            mesh = TriangleCollection.ToMesh();
+            mesh.name = $"(Vector3.Dot(up, faceNormal) > 1-{marginFromUp})";
+            Profiler.EndSample();
 
             Profiler.EndSample();
         }
