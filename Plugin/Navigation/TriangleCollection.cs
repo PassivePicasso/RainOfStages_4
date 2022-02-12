@@ -31,7 +31,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public TriangleCollection(List<Vector3> vertices, int[] indices)
         {
-            this.triangles = new List<Triangle>();
+            this.triangles = new List<Triangle>(indices.Length / 3);
             this.vertices = vertices;
             this.indices = indices;
             ConstructTriangles();
