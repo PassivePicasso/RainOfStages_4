@@ -384,8 +384,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 var triVerts = TriangleCollection.Vertices(triangle);
                 foreach (var probe in probes)
                     if (TestVertex(triVerts.a, probe.transform.position, probe.distance)
-                      && TestVertex(triVerts.b, probe.transform.position, probe.distance)
-                      && TestVertex(triVerts.c, probe.transform.position, probe.distance))
+                      || TestVertex(triVerts.b, probe.transform.position, probe.distance)
+                      || TestVertex(triVerts.c, probe.transform.position, probe.distance))
                         return true;
                 return false;
             });
