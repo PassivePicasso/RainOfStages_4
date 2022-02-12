@@ -73,17 +73,10 @@ namespace PassivePicasso.RainOfStages.Designer
         }
 
 
-        [MenuItem("Assets/Rain of Stages/" + nameof(SurfaceDef))]
-        public static void CreateSurfaceDef() => ScriptableHelper.CreateAsset<SurfaceDef>();
-
-        [MenuItem("Assets/Rain of Stages/" + nameof(DirectorCardCategorySelection))]
-        public static void CreateDirectorCardCategorySelection() => ScriptableHelper.CreateAsset<DirectorCardCategorySelection>();
-
         [MenuItem("Assets/Rain of Stages/" + nameof(MusicTrackDefRef))]
         public static void CreateMusicTrackDefRef() => ScriptableHelper.CreateAsset<MusicTrackDefRef>();
 
-        [MenuItem("Assets/Rain of Stages/SpawnCards/" + nameof(SpawnCard))]
-        public static void CreateSpawnCard() => ScriptableHelper.CreateAsset<SpawnCard>();
+
         [MenuItem("Assets/Rain of Stages/SpawnCards/" + nameof(InteractableSpawnCard))]
         public static void CreateInteractableSpawnCard() => ScriptableHelper.CreateAsset<InteractableSpawnCard>();
         [MenuItem("Assets/Rain of Stages/SpawnCards/" + nameof(CharacterSpawnCard))]
