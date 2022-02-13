@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using PassivePicasso.RainOfStages.Plugin.Utility;
+using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
@@ -10,7 +11,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public float distance = 15;
         private float lastDistance = float.MinValue;
         public bool drawVolumeSphere = false;
-
 
         void Update()
         {
@@ -24,9 +24,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         void OnDrawGizmos()
         {
-            Gizmos.matrix = Matrix4x4.identity;
-            Gizmos.color = new Color(navigationProbeColor.r, navigationProbeColor.g, navigationProbeColor.b, 1);
-            Gizmos.DrawCube(transform.position, Vector3.one * 2);
+            Gizmos.color = Color.clear;
+            Gizmos.DrawCube(transform.position, Vector3.one * 3);
 
             if (drawVolumeSphere)
             {
