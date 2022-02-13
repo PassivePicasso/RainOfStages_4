@@ -26,7 +26,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         [SerializeField, HideInInspector]
         private TriangleCollection TriangleCollection;
-        public Mesh mesh;// { get; private set; }
+        [SerializeField, HideInInspector] public Mesh mesh;// { get; private set; }
         private MeshFilter[] meshFilters;
 
         protected override void OnBuild()
