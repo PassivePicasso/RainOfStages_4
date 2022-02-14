@@ -203,7 +203,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         nodeIndexA = new NodeIndex(i),
                         nodeIndexB = new NodeIndex(nni),
                         hullMask = (int)(mask),
-                        jumpHullMask = (int)(mask),
+                        jumpHullMask = (int)HullMask.None,
                         maxSlope = 90
                     });
                 }

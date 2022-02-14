@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -7,6 +9,15 @@ namespace PassivePicasso.RainOfStages.Configurators
 {
     public static class Extension
     {
+        public static int GetMaxSetFlagValue<T>(this T flags) where T : struct
+        {
+            int value = (int)Convert.ChangeType(flags, typeof(int));
+            Type enumType = flags.GetType();
+            Array enumValues = Enum.GetValues(enumType);
+            IEnumerable<int> setValues = enumValues.Cast<int>().Where(f => (f & value) == f);
+            return setValues.Any() ? setValues.Max() : 0;
+        }
+
         public static bool IsPointInside(this Mesh aMesh, Vector3 aLocalPoint)
         {
             var verts = aMesh.vertices;

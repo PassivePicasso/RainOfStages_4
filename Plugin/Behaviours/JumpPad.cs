@@ -33,11 +33,12 @@ namespace PassivePicasso.RainOfStages.Behaviours
                 destinationNode.nodeName = "Destination";
                 destinationNode.forbiddenHulls = HullMask.None;
                 destinationNode.HardLinks = new StaticNode[0];
-                destinationNode.staticNodeColor = Color.green;
+                destinationNode.nodeColor = Color.green;
                 destinationNode.worldSpacePosition = true;
                 destinationNode.relativePosition = false;
                 destinationNode.overrideDistanceScore = true;
-                destinationNode.allowDynamicConnections = true;
+                destinationNode.allowDynamicInboundConnections = true;
+                destinationNode.allowDynamicOutboundConnections = true;
                 destinationNode.nodePosition = transform.forward * 10;
             }
             if (!originNode)
@@ -45,13 +46,13 @@ namespace PassivePicasso.RainOfStages.Behaviours
                 originNode = gameObject.AddComponent<StaticNode>();
                 originNode.nodeName = "Origin";
                 originNode.forbiddenHulls = HullMask.BeetleQueen;
-                originNode.staticNodeColor = Color.cyan;
+                originNode.nodeColor = Color.cyan;
                 originNode.HardLinks = new StaticNode[] { destinationNode };
                 originNode.worldSpacePosition = false;
                 originNode.relativePosition = false;
                 originNode.overrideDistanceScore = true;
-                originNode.allowDynamicConnections = true;
-                originNode.allowOutboundConnections = false;
+                destinationNode.allowDynamicInboundConnections = true;
+                originNode.allowDynamicOutboundConnections = false;
             }
             if (regenerateStaticNodes) regenerateStaticNodes = false;
 
@@ -87,8 +88,8 @@ namespace PassivePicasso.RainOfStages.Behaviours
             if (!gizmoMaterial || gizmoMaterial.shader.name != DebugShaderName)
                 gizmoMaterial = new Material(Shader.Find(DebugShaderName));
             gizmoMaterial.SetPass(0);
-            Color originColor = originNode.staticNodeColor;
-            Color destinationColor = destinationNode.staticNodeColor;
+            Color originColor = originNode.nodeColor;
+            Color destinationColor = destinationNode.nodeColor;
 
             var trajectory = Trajectory().ToArray();
             GL.PushMatrix();

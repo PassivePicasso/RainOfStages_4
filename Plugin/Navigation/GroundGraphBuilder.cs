@@ -54,7 +54,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     position = position,
                     flags = staticNode.nodeFlags,
                     forbiddenHulls = staticNode.forbiddenHulls,
-                    linkListIndex = new LinkListIndex { index = links.Count, size = (uint)staticNode.HardLinks.Length }
                 };
                 nodes.Add(item);
             }
@@ -135,9 +134,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
             Profiler.BeginSample("Evaluate position fit");
 
-            var qRadius = QueenHull.radius * 1.25f;
-            var gRadius = GolemHull.radius * 1.25f;
-            var hRadius = HumanHull.radius * 1.25f;
+            var qRadius = QueenHull.radius * 1.35f;
+            var gRadius = GolemHull.radius * 1.5f;
+            var hRadius = HumanHull.radius * 1.5f;
             var qOffset = qRadius * Vector3.up;
             var gOffset = gRadius * Vector3.up;
             var hOffset = hRadius * Vector3.up;
@@ -145,15 +144,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             var mask = HullMask.None;
 
             if (Physics.OverlapCapsuleNonAlloc(testPosition + qOffset, position + QueenHeightOffset - qOffset, qRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, QueenHull.radius / 2))
+             && FootprintFitsPosition(position, (float)qRadius, QueenHull.height, qRadius))
                 mask = AllHullsMask;
             else
             if (Physics.OverlapCapsuleNonAlloc(testPosition + gOffset, position + GolemHeightOffset - gOffset, gRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, GolemHull.radius / 2))
+             && FootprintFitsPosition(position, (float)gRadius, GolemHull.height, gRadius))
                 mask = AllHullsMask ^ HullMask.BeetleQueen;
             else
             if (Physics.OverlapCapsuleNonAlloc(testPosition + hOffset, position + HumanHeightOffset - hOffset, hRadius, colliders, LayerIndex.enemyBody.collisionMask) == 0
-             && FootprintFitsPosition(position, (float)hRadius, HumanHull.height, HumanHull.radius / 2))
+             && FootprintFitsPosition(position, (float)hRadius, HumanHull.height, gRadius))
                 mask = HullMask.Human;
 
             Profiler.EndSample();
@@ -226,7 +225,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                             jumpHullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
                         });
                     }
-                    if (!staticNode.allowDynamicConnections || !staticNode.allowOutboundConnections)
+                    if (!staticNode.allowDynamicOutboundConnections)
                         continue;
                 }
 
@@ -238,7 +237,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 {
                     var otherNode = nodes[nni];
 
-                    if (nni < staticNodes.Count && (!staticNodes[nni].allowDynamicConnections || !staticNodes[nni].allowInboundConnections))
+                    if (nni < staticNodes.Count && !staticNodes[nni].allowDynamicInboundConnections)
                         continue;
 
                     var maxDist = Vector3.Distance(node.position, otherNode.position);
@@ -264,13 +263,15 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                             forbiddenLinkHulls ^= hullMask;
                     }
                     var linkMask = (AllHullsMask ^ (forbiddenLinkHulls | otherNode.forbiddenHulls));
+                    if (linkMask == HullMask.None)
+                        continue;
                     links.Add(new Link
                     {
                         distanceScore = (otherNode.position - node.position).magnitude,
                         nodeIndexA = new NodeIndex(i),
                         nodeIndexB = new NodeIndex(nni),
                         hullMask = (int)linkMask,
-                        jumpHullMask = (int)linkMask,
+                        jumpHullMask = (int)HullMask.None,
                         minJumpHeight = 0,
                         maxSlope = 90,
                         gateIndex = (byte)otherNode.gateIndex
@@ -284,6 +285,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 var node = nodes[i];
                 uint size = (uint)links.Count(l => l.nodeIndexA.nodeIndex == i);
+                if (size == 0)
+                    Debug.LogError("Zero Link Node found");
                 node.linkListIndex = new LinkListIndex { index = linkIndex, size = size };
                 linkIndex += (int)size;
                 nodes[i] = node;
@@ -299,7 +302,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 float height = hull.height;
                 float radius = hull.radius;
                 float offset = radius * 1.5f;
-                var offsetVector = Vector3.up * offset;
+                var offsetVector = Vector3.up * (offset + 2);
                 var heightOffsetVector = Vector3.up * height;
                 var testStart = node.position + offsetVector;
                 var testStop = otherNode.position + offsetVector;
@@ -307,7 +310,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 for (float tf = 0; tf <= 1f; tf += 1f / 5f)
                 {
                     var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                    if (Physics.RaycastNonAlloc(testPosition, Vector3.down, hitArray, offset * 1.2f) == 0)
+                    if (Physics.SphereCastNonAlloc(testPosition, radius, Vector3.down, hitArray, offset + 3) == 0)
                     {
                         isValid = false;
                         break;

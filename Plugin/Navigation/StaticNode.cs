@@ -11,7 +11,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     {
         public static readonly List<StaticNode> StaticNodes = new List<StaticNode>();
 
-        public Color staticNodeColor = Color.green;
+        public Color nodeColor = Color.green;
 
         public string nodeName;
         [EnumMask(typeof(HullMask))]
@@ -23,9 +23,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public float distanceScore;
         public bool relativePosition = true;
         public bool worldSpacePosition = true;
-        public bool allowDynamicConnections = true;
-        public bool allowOutboundConnections = true;
-        public bool allowInboundConnections = true;
+        public bool allowDynamicOutboundConnections = true;
+        public bool allowDynamicInboundConnections = true;
         public StaticNode[] HardLinks;
         [Tooltip("Editor Only: This is invoked when the static node is changed in the Unity Editor")]
         public UnityAction onChanged;
@@ -63,6 +62,12 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         private void OnDestroy()
         {
             StaticNodes.Remove(this);
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = nodeColor;
+            Gizmos.DrawCube(position, Vector3.one);
         }
     }
 }

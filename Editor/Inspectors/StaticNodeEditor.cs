@@ -9,12 +9,23 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
     public class StaticNodeEditor : Editor
     {
         static RaycastHit[] raycastHits = new RaycastHit[128];
+
+        private void OnEnable()
+        {
+            Tools.hidden = true;
+        }
+        private void OnDisable()
+        {
+            Tools.hidden = false;
+        }
+
         private void OnSceneGUI()
         {
             StaticNode staticNode = (StaticNode)target;
             Vector3 newTargetPosition = staticNode.position;
-            using (new Handles.DrawingScope(staticNode.staticNodeColor))
+            using (new Handles.DrawingScope(staticNode.nodeColor))
             {
+                Handles.color = Color.clear;
                 var changedPosition = Handles.Slider(newTargetPosition, Vector3.up, 1f, Handles.CubeHandleCap, 0.1f);
                 if (Vector3.Distance(changedPosition, newTargetPosition) > .1f)
                 {
