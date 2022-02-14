@@ -1,5 +1,6 @@
 ﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
 using PassivePicasso.RainOfStages.Plugin.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -27,6 +28,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
             DestroyImmediate(cubePrim);
         }
 
+
         private static void Draw(Camera cam)
         {
             if (!triangleMaterial)
@@ -37,6 +39,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
             var groundGraphBuilders = Selection.GetFiltered<GroundGraphBuilder>(SelectionMode.Deep);
             if (probes.Any() || groundGraphBuilders.Any())
             {
+
                 foreach (var target in FindObjectsOfType<GroundGraphBuilder>())
                     Graphics.DrawMesh(target.mesh, Vector3.up * 0.1f, Quaternion.identity, triangleMaterial, 0, cam, 0);
 
