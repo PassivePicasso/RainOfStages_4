@@ -222,7 +222,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                             nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
                             distanceScore = staticNode.distanceScore,
                             hullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
-                            jumpHullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
+                            jumpHullMask = (int)HullMask.None,
                         });
                     }
                     if (!staticNode.allowDynamicOutboundConnections)
