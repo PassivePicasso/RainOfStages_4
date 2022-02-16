@@ -123,6 +123,7 @@ namespace PassivePicasso.RainOfStages.Designer
             var cubePrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
             var cubeMf = cubePrim.GetComponent<MeshFilter>();
             cube = cubeMf.sharedMesh;
+            GameObject.DestroyImmediate(cubePrim);
 
             LoadDebugValues();
             OnBuilt();
