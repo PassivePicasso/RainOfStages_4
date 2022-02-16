@@ -1,4 +1,5 @@
-﻿using PassivePicasso.RainOfStages.Plugin.Utility;
+﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
+using PassivePicasso.RainOfStages.Plugin.Utility;
 using PassivePicasso.RainOfStages.Proxy;
 using PassivePicasso.RainOfStages.Utilities;
 using RoR2;
@@ -95,13 +96,21 @@ namespace PassivePicasso.RainOfStages.Designer
         public static void CreateStage()
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var sceneInfo = new GameObject("SceneInfo", typeof(SceneInfo), typeof(ClassicStageInfo), typeof(PostProcessVolume));
+            sceneInfo.layer = LayerIndex.postProcess.intVal;
+
 #pragma warning disable CS0618 // Type or member is obsolete
             var director = new GameObject("Director", typeof(NetworkIdentity), typeof(DirectorCore), typeof(SceneDirector), typeof(CombatDirector), typeof(CombatDirector));
 #pragma warning restore CS0618 // Type or member is obsolete
             var globalEventManager = new GameObject("GlobalEventManager", typeof(Proxy.GlobalEventManager));
 
-            var sceneInfo = new GameObject("SceneInfo", typeof(RoR2.SceneInfo), typeof(ClassicStageInfo), typeof(PostProcessVolume));
-            sceneInfo.layer = LayerIndex.postProcess.intVal;
+            var graphBuilder = new GameObject("NodeGraphBuilder", typeof(AirGraphBuilder), typeof(GroundGraphBuilder));
+            var defaultProbe = new GameObject("Probe (1)", typeof(NavigationProbe));
+            graphBuilder.tag = "EditorOnly";
+            defaultProbe.tag = "EditorOnly";
+            defaultProbe.transform.parent = graphBuilder.transform;
+
 
             var combatDirectors = director.GetComponents<CombatDirector>();
 
