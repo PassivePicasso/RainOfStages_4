@@ -19,7 +19,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public int seed;
         public float nodeSeparation = 8;
         //public float linkDistance = 16;
-        public int passes;
+        public int passes = 5;
         private int pointsPerLeaf;
 
         public List<NavigationProbe> Probes = new List<NavigationProbe>();
