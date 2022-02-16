@@ -64,6 +64,10 @@ namespace PassivePicasso.RainOfStages.Designer
             HullMask = (int)(HullMask.Human | HullMask.Golem | HullMask.BeetleQueen)
         };
 
+        private static Material triangleMaterial;
+        private static Mesh cube;
+        private static Dictionary<NavigationProbe, Mesh> probeMeshes = new Dictionary<NavigationProbe, Mesh>();
+
         public static bool DebugNoCeiling { get => DebugSettings.DebugNoCeiling; set => DebugSettings.DebugNoCeiling = value; }
         public static bool DebugTeleporterOk { get => DebugSettings.DebugTeleporterOk; set => DebugSettings.DebugTeleporterOk = value; }
         public static bool DebugAirNodes { get => DebugSettings.DebugAirNodes; set => DebugSettings.DebugAirNodes = value; }
@@ -112,8 +116,13 @@ namespace PassivePicasso.RainOfStages.Designer
         [InitializeOnLoadMethod]
         static void InitializeDebugDrawer()
         {
+            triangleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "VertexColor.mat"));
             linkMaterial = GetDebugMaterial();
             nodeMaterial = GetDebugMaterial(true);
+            var cubePrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var cubeMf = cubePrim.GetComponent<MeshFilter>();
+            cube = cubeMf.sharedMesh;
+
             LoadDebugValues();
             OnBuilt();
             Camera.onPreCull -= Draw;
@@ -133,10 +142,13 @@ namespace PassivePicasso.RainOfStages.Designer
             var airGraphBuilders = Selection.GetFiltered<AirGraphBuilder>(SelectionMode.Deep);
             if (probes.Any() || groundGraphBuilders.Any() || airGraphBuilders.Any())
             {
+
                 Handles.BeginGUI();
                 var height = showSettings ? 360 : 64;
                 var width = showSettings ? 300 : 134;
-                GUILayout.BeginArea(new Rect(4, 4, width, height), EditorStyles.helpBox);
+                Rect screenRect = new Rect(4, 4, width, height);
+                GUILayout.BeginArea(screenRect, EditorStyles.helpBox);
+
                 if (GUILayout.Button("Build Ground Graph"))
                 {
                     foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
@@ -154,6 +166,10 @@ namespace PassivePicasso.RainOfStages.Designer
                         scrollPosition = scroll.scrollPosition;
                     }
                 GUILayout.EndArea();
+                var mousePos = Event.current.mousePosition;
+
+                if (screenRect.Contains(mousePos) && Event.current.type == EventType.MouseDown)
+                    Event.current.Use();
                 Handles.EndGUI();
             }
         }
@@ -165,24 +181,71 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static void Draw(Camera camera)
         {
-            if (DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
-            if (DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+            if (DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
             if (DebugAirLinks)
             {
                 if (airLinkLineMesh)
-                    Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                    Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
                 if (airLinkArrowMesh)
-                    Graphics.DrawMesh(airLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                    Graphics.DrawMesh(airLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
             }
             if (DebugGroundLinks)
             {
                 var position = Vector3.up * VerticalOffset;
                 if (groundLinkLineMesh)
-                    Graphics.DrawMesh(groundLinkLineMesh, position, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                    Graphics.DrawMesh(groundLinkLineMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
                 if (groundLinkArrowMesh)
-                    Graphics.DrawMesh(groundLinkArrowMesh, position, Quaternion.identity, linkMaterial, 0, SceneView.lastActiveSceneView.camera, 0);
+                    Graphics.DrawMesh(groundLinkArrowMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
+            }
+            var probes = Selection.GetFiltered<NavigationProbe>(SelectionMode.Deep);
+            var groundGraphBuilders = Selection.GetFiltered<GroundGraphBuilder>(SelectionMode.Deep);
+            if (probes.Any() || groundGraphBuilders.Any())
+            {
+
+                if (DebugSettings.ProbeLineOfSightOverlay)
+                    foreach (var target in GameObject.FindObjectsOfType<GroundGraphBuilder>())
+                        Graphics.DrawMesh(target.mesh, Vector3.up * 0.1f, Quaternion.identity, triangleMaterial, 0, camera, 0);
+
+                foreach (var probe in GameObject.FindObjectsOfType<NavigationProbe>())
+                {
+                    var color = new Color(probe.navigationProbeColor.r, probe.navigationProbeColor.g, probe.navigationProbeColor.b, 1);
+                    if (!probeMeshes.ContainsKey(probe))
+                    {
+                        probeMeshes[probe] = GameObject.Instantiate(cube);
+                        probeMeshes[probe].SetIndices(cube.triangles, MeshTopology.Triangles, 0);
+                        probeMeshes[probe].colors = new Color[] {
+                        Color.Lerp(color, Color.black,0.25f),
+                        Color.Lerp(color, Color.black,0.25f),
+                        Color.Lerp(color, Color.black,0.25f),
+                        Color.Lerp(color, Color.black,0.25f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.25f),
+                        Color.Lerp(color, Color.black,.25f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.25f),
+                        Color.Lerp(color, Color.black,.25f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,.5f),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                        Color.Lerp(color, Color.black,0),
+                    };
+                    }
+                    var matrix = Matrix4x4.TRS(probe.transform.position, Quaternion.identity, Vector3.one * 2);
+                    Graphics.DrawMesh(probeMeshes[probe], matrix, triangleMaterial, 0, camera);
+                }
             }
         }
 
@@ -254,6 +317,9 @@ namespace PassivePicasso.RainOfStages.Designer
                 regenerateArrowMesh |= updateColors;
                 regenerateNodeMesh |= updateColors;
             }
+
+            repaint |= CheckedField(() => DebugSettings.ProbeLineOfSightOverlay = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugSettings.ProbeLineOfSightOverlay)), DebugSettings.ProbeLineOfSightOverlay));
+
             repaint |= regenerateLineMesh || regenerateNodeMesh || regenerateArrowMesh;
 
             if (repaint)

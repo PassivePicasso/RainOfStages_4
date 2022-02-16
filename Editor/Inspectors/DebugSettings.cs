@@ -15,6 +15,8 @@ namespace PassivePicasso.RainOfStages.Designer
         public bool DebugGroundNodes;
         public bool DebugGroundLinks;
 
+        public bool ProbeLineOfSightOverlay;
+
         public float VerticalOffset;
         public float arrowSize;
         public float arrowOffset;
