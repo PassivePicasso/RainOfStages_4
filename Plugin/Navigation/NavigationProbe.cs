@@ -1,5 +1,4 @@
-﻿using PassivePicasso.RainOfStages.Plugin.Utility;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Plugin.Navigation
 {
