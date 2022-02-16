@@ -18,7 +18,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public int seed;
         public float nodeSeparation = 8;
-        //public float linkDistance = 16;
         public int passes = 5;
         private int pointsPerLeaf;
 
