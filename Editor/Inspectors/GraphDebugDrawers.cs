@@ -67,6 +67,7 @@ namespace PassivePicasso.RainOfStages.Designer
         private static Material triangleMaterial;
         private static Mesh cube;
         private static Dictionary<NavigationProbe, Mesh> probeMeshes = new Dictionary<NavigationProbe, Mesh>();
+        private static Dictionary<NavigationProbe, Color> probeColors = new Dictionary<NavigationProbe, Color>();
 
         public static bool DebugNoCeiling { get => DebugSettings.DebugNoCeiling; set => DebugSettings.DebugNoCeiling = value; }
         public static bool DebugTeleporterOk { get => DebugSettings.DebugTeleporterOk; set => DebugSettings.DebugTeleporterOk = value; }
@@ -212,36 +213,37 @@ namespace PassivePicasso.RainOfStages.Designer
                 foreach (var probe in GameObject.FindObjectsOfType<NavigationProbe>())
                 {
                     var color = new Color(probe.navigationProbeColor.r, probe.navigationProbeColor.g, probe.navigationProbeColor.b, 1);
-                    if (!probeMeshes.ContainsKey(probe))
+                    if (!probeMeshes.ContainsKey(probe) || probeColors[probe] != probe.navigationProbeColor)
                     {
+                        probeColors[probe] = probe.navigationProbeColor;
                         probeMeshes[probe] = GameObject.Instantiate(cube);
                         probeMeshes[probe].SetIndices(cube.triangles, MeshTopology.Triangles, 0);
                         probeMeshes[probe].colors = new Color[] {
-                        Color.Lerp(color, Color.black,0.25f),
-                        Color.Lerp(color, Color.black,0.25f),
-                        Color.Lerp(color, Color.black,0.25f),
-                        Color.Lerp(color, Color.black,0.25f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.25f),
-                        Color.Lerp(color, Color.black,.25f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.25f),
-                        Color.Lerp(color, Color.black,.25f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,.5f),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                        Color.Lerp(color, Color.black,0),
-                    };
+                            Color.Lerp(color, Color.black,0.25f),
+                            Color.Lerp(color, Color.black,0.25f),
+                            Color.Lerp(color, Color.black,0.25f),
+                            Color.Lerp(color, Color.black,0.25f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.25f),
+                            Color.Lerp(color, Color.black,.25f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.25f),
+                            Color.Lerp(color, Color.black,.25f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,.5f),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                            Color.Lerp(color, Color.black,0),
+                        };
                     }
                     var matrix = Matrix4x4.TRS(probe.transform.position, Quaternion.identity, Vector3.one * 2);
                     Graphics.DrawMesh(probeMeshes[probe], matrix, triangleMaterial, 0, camera);
