@@ -29,6 +29,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         [SerializeField, HideInInspector] public Mesh mesh;// { get; private set; }
         private MeshFilter[] meshFilters;
 
+        public List<int> zeroOutboundLinkIndices = new List<int>();
+
         protected override void OnBuild()
         {
             var nodes = new List<Node>();
@@ -113,10 +115,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
 
             Profiler.BeginSample("Line of Sight to any probe");
-            var validPosition = true;
-            for (int j = 0; j < probes.Length; j++)
+            int probeIndex = 0;
+            for (; probeIndex < probes.Length; probeIndex++)
             {
-                var probe = probes[j];
+                var probe = probes[probeIndex];
                 var probePosition = probe.transform.position;
                 var distanceToProbe = Vector3.Distance(probePosition, position);
                 var direction = (probePosition - (position + HumanHeightOffset / 2)).normalized;
@@ -124,12 +126,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
                         if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
                             break;
-
-                if (j == probes.Length - 1)
-                    validPosition = false;
             }
             Profiler.EndSample();
-            if (!validPosition)
+            if (probeIndex == probes.Length - 1)
                 return;
 
             Profiler.BeginSample("Evaluate position fit");
