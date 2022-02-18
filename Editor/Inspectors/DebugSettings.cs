@@ -6,6 +6,7 @@ namespace PassivePicasso.RainOfStages.Designer
     [System.Serializable]
     public struct DebugSettings
     {
+        public bool ShowGraphTools;
         public bool DebugNoCeiling;
         public bool DebugTeleporterOk;
 
@@ -16,11 +17,12 @@ namespace PassivePicasso.RainOfStages.Designer
         public bool DebugGroundLinks;
 
         public bool ProbeLineOfSightOverlay;
+        public bool ShowSettings;
 
         public float VerticalOffset;
-        public float arrowSize;
-        public float arrowOffset;
-        public bool percentageOffset;
+        public float ArrowSize;
+        public float ArrowOffset;
+        public bool PercentageOffset;
 
         public Color HumanColor;
         public Color GolemColor;

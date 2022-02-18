@@ -53,9 +53,9 @@ namespace PassivePicasso.RainOfStages.Designer
         public static DebugSettings DebugSettings = new DebugSettings
         {
             VerticalOffset = 1f,
-            arrowSize = 1f,
-            arrowOffset = .51f,
-            percentageOffset = true,
+            ArrowSize = 1f,
+            ArrowOffset = .51f,
+            PercentageOffset = true,
             HumanColor = Color.green,
             GolemColor = Color.blue,
             QueenColor = Color.red,
@@ -69,24 +69,7 @@ namespace PassivePicasso.RainOfStages.Designer
         private static Dictionary<NavigationProbe, Mesh> probeMeshes = new Dictionary<NavigationProbe, Mesh>();
         private static Dictionary<NavigationProbe, Color> probeColors = new Dictionary<NavigationProbe, Color>();
 
-        public static bool DebugNoCeiling { get => DebugSettings.DebugNoCeiling; set => DebugSettings.DebugNoCeiling = value; }
-        public static bool DebugTeleporterOk { get => DebugSettings.DebugTeleporterOk; set => DebugSettings.DebugTeleporterOk = value; }
-        public static bool DebugAirNodes { get => DebugSettings.DebugAirNodes; set => DebugSettings.DebugAirNodes = value; }
-        public static bool DebugAirLinks { get => DebugSettings.DebugAirLinks; set => DebugSettings.DebugAirLinks = value; }
-        public static bool DebugGroundNodes { get => DebugSettings.DebugGroundNodes; set => DebugSettings.DebugGroundNodes = value; }
-        public static bool DebugGroundLinks { get => DebugSettings.DebugGroundLinks; set => DebugSettings.DebugGroundLinks = value; }
-        public static float VerticalOffset { get => DebugSettings.VerticalOffset; set => DebugSettings.VerticalOffset = value; }
-        public static float arrowSize { get => DebugSettings.arrowSize; set => DebugSettings.arrowSize = value; }
-        public static float arrowOffset { get => DebugSettings.arrowOffset; set => DebugSettings.arrowOffset = value; }
-        public static bool percentageOffset { get => DebugSettings.percentageOffset; set => DebugSettings.percentageOffset = value; }
-        public static Color HumanColor { get => DebugSettings.HumanColor; set => DebugSettings.HumanColor = value; }
-        public static Color GolemColor { get => DebugSettings.GolemColor; set => DebugSettings.GolemColor = value; }
-        public static Color QueenColor { get => DebugSettings.QueenColor; set => DebugSettings.QueenColor = value; }
-        public static Color NoCeilingColor { get => DebugSettings.NoCeilingColor; set => DebugSettings.NoCeilingColor = value; }
-        public static Color TeleporterOkColor { get => DebugSettings.TeleporterOkColor; set => DebugSettings.TeleporterOkColor = value; }
-
         private static Vector2 scrollPosition;
-        private static bool showSettings;
 
         #region private fields
         private static Dictionary<HullMask, Color> colormap;
@@ -111,6 +94,24 @@ namespace PassivePicasso.RainOfStages.Designer
         private static Mesh noCeilingMesh;
         private static bool regenerateLineMesh, regenerateArrowMesh, regenerateNodeMesh;
         private static bool repaint;
+        private static GUIContent
+            hullMaskContent,
+            debugNoCeilingContent,
+            debugTeleporterOkContent,
+            debugGroundNodesContent,
+            debugAirNodesContent,
+            debugGroundLinksContent,
+            debugAirLinksContent,
+            verticalOffsetContent,
+            arrowSizeContent,
+            arrowOffsetContent,
+            percentageOffsetContent,
+            humanColorContent,
+            golemColorContent,
+            queenColorContent,
+            probeLineOfSightOverlayContent,
+            noCeilingColorContent,
+            teleporterOkColorContent;
         #endregion
 
 
@@ -136,45 +137,81 @@ namespace PassivePicasso.RainOfStages.Designer
             GraphBuilder.OnBuilt += OnBuilt;
             SceneView.onSceneGUIDelegate -= ExternalSceneGui;
             SceneView.onSceneGUIDelegate += ExternalSceneGui;
+            GenerateGUIContent();
         }
+
+        static void GenerateGUIContent()
+        {
+            hullMaskContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.HullMask)));
+            debugNoCeilingContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugNoCeiling)));
+            debugTeleporterOkContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugTeleporterOk)));
+            debugGroundNodesContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugGroundNodes)));
+            debugAirNodesContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugAirNodes)));
+            debugGroundLinksContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugGroundLinks)));
+            debugAirLinksContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugAirLinks)));
+            verticalOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.VerticalOffset)));
+            arrowSizeContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ArrowSize)));
+            arrowOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ArrowOffset)));
+            percentageOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.PercentageOffset)));
+            humanColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.HumanColor)));
+            golemColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.GolemColor)));
+            queenColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.QueenColor)));
+            probeLineOfSightOverlayContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ProbeLineOfSightOverlay)));
+            noCeilingColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.NoCeilingColor)));
+            teleporterOkColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.TeleporterOkColor)));
+        }
+
         private static void ExternalSceneGui(SceneView sceneView)
         {
-            if (!GraphBuilder.DisplayGraphToolOverlay) return;
-
             var probe = GameObject.FindObjectOfType<NavigationProbe>();
             var groundGraphBuilders = GameObject.FindObjectOfType<GroundGraphBuilder>();
             var airGraphBuilders = GameObject.FindObjectOfType<AirGraphBuilder>();
             if (probe || groundGraphBuilders || airGraphBuilders)
             {
-                Handles.BeginGUI();
                 var height = CalculateHeight();
-                var width = showSettings ? 300 : 160;
+                var width = CalculateWidth();
                 Rect screenRect = new Rect(4, 4, width, height);
+
+
+                Handles.BeginGUI();
                 GUILayout.BeginArea(screenRect, EditorStyles.helpBox);
+                EditorGUI.BeginChangeCheck();
+                try
+                {
+                    if (DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent("X"), GUILayout.Width(EditorGUIUtility.singleLineHeight), GUILayout.Height(EditorGUIUtility.singleLineHeight)))
+                        DebugSettings.ShowGraphTools = false;
+                    if (!DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent(">"), GUILayout.Width(EditorGUIUtility.singleLineHeight), GUILayout.Height(EditorGUIUtility.singleLineHeight)))
+                        DebugSettings.ShowGraphTools = true;
 
-                if (GUILayout.Button(new GUIContent("Build Ground Graph")))
-                {
-                    foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
-                        ggb.Build();
-                }
-                if (GUILayout.Button(new GUIContent("Build Air Graph")))
-                {
-                    foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
-                        agb.Build();
-                }
-                if (showSettings = GUILayout.Toggle(showSettings, "Debug Settings"))
-                    using (var scroll = new GUILayout.ScrollViewScope(scrollPosition))
+                    if (!DebugSettings.ShowGraphTools) return;
+
+                    if (GUILayout.Button(new GUIContent("Build Ground Graph")))
                     {
-                        OnDebugGUI();
-                        scrollPosition = scroll.scrollPosition;
+                        foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
+                            ggb.Build();
                     }
-                GUILayout.EndArea();
-                var mousePos = Event.current.mousePosition;
+                    if (GUILayout.Button(new GUIContent("Build Air Graph")))
+                    {
+                        foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
+                            agb.Build();
+                    }
+                    if (DebugSettings.ShowSettings = GUILayout.Toggle(DebugSettings.ShowSettings, "Debug Settings"))
+                        using (var scroll = new GUILayout.ScrollViewScope(scrollPosition))
+                        {
+                            OnDebugGUI();
+                            scrollPosition = scroll.scrollPosition;
+                        }
 
-                if (screenRect.Contains(mousePos) && Event.current.type == EventType.MouseDown)
-                    Event.current.Use();
-
-                Handles.EndGUI();
+                }
+                finally
+                {
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        SaveDebugValues();
+                    }
+                    GUILayout.EndArea();
+                    Handles.EndGUI();
+                }
             }
         }
         private static void OnBuilt()
@@ -184,20 +221,20 @@ namespace PassivePicasso.RainOfStages.Designer
         }
         private static void Draw(Camera camera)
         {
-            if (DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugAirLinks)
+            if (DebugSettings.DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugAirLinks)
             {
                 if (airLinkLineMesh)
                     Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
                 if (airLinkArrowMesh)
                     Graphics.DrawMesh(airLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
             }
-            if (DebugGroundLinks)
+            if (DebugSettings.DebugGroundLinks)
             {
-                var position = Vector3.up * VerticalOffset;
+                var position = Vector3.up * DebugSettings.VerticalOffset;
                 if (groundLinkLineMesh)
                     Graphics.DrawMesh(groundLinkLineMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
                 if (groundLinkArrowMesh)
@@ -279,64 +316,48 @@ namespace PassivePicasso.RainOfStages.Designer
                 repaint = false;
             }
         }
-        private static float CalculateHeight()
-        {
-            var result = 64f;
-            var debugType = typeof(DebugSettings);
-            var fields = debugType.GetFields(BindingFlags.Public | BindingFlags.Instance);
-            var toggleFields = fields.Where(fi => fi.FieldType == typeof(bool)).ToArray();
-            if (showSettings)
-                result += (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + 1) * toggleFields.Length;
-            var trueToggles = toggleFields.Where(fi => (bool)fi.GetValue(DebugSettings)).ToArray();
-
-            return result;
-        }
         public static void OnDebugGUI()
         {
-            regenerateLineMesh |= CheckedField(() => DebugSettings.HullMask = (int)(HullMask)EditorGUILayout.EnumFlagsField(ObjectNames.NicifyVariableName(nameof(DebugSettings.HullMask)), (HullMask)DebugSettings.HullMask));
+            regenerateLineMesh |= CheckedField(() => DebugSettings.HullMask = (int)(HullMask)EditorGUILayout.EnumFlagsField(hullMaskContent, (HullMask)DebugSettings.HullMask));
 
 
-            repaint |= CheckedField(() => DebugNoCeiling = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugNoCeiling)), DebugNoCeiling));
-            if (DebugNoCeiling)
-                regenerateNodeMesh |= CheckedField(() => NoCeilingColor = EditorGUILayout.ColorField(NoCeilingColor), ObjectNames.NicifyVariableName(nameof(NoCeilingColor)));
+            repaint |= CheckedField(() => DebugSettings.DebugNoCeiling = EditorGUILayout.Toggle(debugNoCeilingContent, DebugSettings.DebugNoCeiling));
+            if (DebugSettings.DebugNoCeiling)
+                regenerateNodeMesh |= CheckedField(() => DebugSettings.NoCeilingColor = EditorGUILayout.ColorField(DebugSettings.NoCeilingColor), noCeilingColorContent);
 
-            repaint |= CheckedField(() => DebugTeleporterOk = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugTeleporterOk)), DebugTeleporterOk));
-            if (DebugTeleporterOk)
-                regenerateNodeMesh |= CheckedField(() => TeleporterOkColor = EditorGUILayout.ColorField(TeleporterOkColor), ObjectNames.NicifyVariableName(nameof(TeleporterOkColor)));
+            repaint |= CheckedField(() => DebugSettings.DebugTeleporterOk = EditorGUILayout.Toggle(debugTeleporterOkContent, DebugSettings.DebugTeleporterOk));
+            if (DebugSettings.DebugTeleporterOk)
+                regenerateNodeMesh |= CheckedField(() => DebugSettings.TeleporterOkColor = EditorGUILayout.ColorField(DebugSettings.TeleporterOkColor), teleporterOkColorContent);
 
-            regenerateNodeMesh |= CheckedField(() => DebugGroundNodes = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugGroundNodes)), DebugGroundNodes));
-            regenerateNodeMesh |= CheckedField(() => DebugGroundLinks = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugGroundLinks)), DebugGroundLinks));
+            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugGroundNodes = EditorGUILayout.Toggle(debugGroundNodesContent, DebugSettings.DebugGroundNodes));
+            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugGroundLinks = EditorGUILayout.Toggle(debugGroundLinksContent, DebugSettings.DebugGroundLinks));
 
 
-            regenerateNodeMesh |= CheckedField(() => DebugAirNodes = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugAirNodes)), DebugAirNodes));
-            regenerateLineMesh |= CheckedField(() => DebugAirLinks = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugAirLinks)), DebugAirLinks));
-            if (DebugGroundLinks)
+            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugAirNodes = EditorGUILayout.Toggle(debugAirNodesContent, DebugSettings.DebugAirNodes));
+            regenerateLineMesh |= CheckedField(() => DebugSettings.DebugAirLinks = EditorGUILayout.Toggle(debugAirLinksContent, DebugSettings.DebugAirLinks));
+            if (DebugSettings.DebugGroundLinks)
             {
-                repaint |= CheckedField(() => VerticalOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(VerticalOffset)), VerticalOffset, 0, 20));
+                repaint |= CheckedField(() => DebugSettings.VerticalOffset = EditorGUILayout.Slider(verticalOffsetContent, DebugSettings.VerticalOffset, 0, 20));
             }
-            if (DebugGroundLinks || DebugAirLinks)
+            if (DebugSettings.DebugGroundLinks || DebugSettings.DebugAirLinks)
             {
-                regenerateArrowMesh |= CheckedField(() => arrowSize = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowSize)), arrowSize, 0.5f, 10));
-                regenerateArrowMesh |= CheckedField(() => arrowOffset = EditorGUILayout.Slider(ObjectNames.NicifyVariableName(nameof(arrowOffset)), arrowOffset, 0, percentageOffset ? 1 : 20));
-                regenerateArrowMesh |= CheckedField(() => percentageOffset = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(percentageOffset)), percentageOffset));
+                regenerateArrowMesh |= CheckedField(() => DebugSettings.ArrowSize = EditorGUILayout.Slider(arrowSizeContent, DebugSettings.ArrowSize, 0.5f, 10));
+                regenerateArrowMesh |= CheckedField(() => DebugSettings.ArrowOffset = EditorGUILayout.Slider(arrowOffsetContent, DebugSettings.ArrowOffset, 0, DebugSettings.PercentageOffset ? 1 : 20));
+                regenerateArrowMesh |= CheckedField(() => DebugSettings.PercentageOffset = EditorGUILayout.Toggle(percentageOffsetContent, DebugSettings.PercentageOffset));
             }
-            if (DebugGroundLinks || DebugGroundNodes || DebugAirLinks || DebugAirNodes)
+            if (DebugSettings.DebugGroundLinks || DebugSettings.DebugGroundNodes || DebugSettings.DebugAirLinks || DebugSettings.DebugAirNodes)
             {
                 bool updateColors = false;
-                updateColors |= CheckedField(() => HumanColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(HumanColor)), HumanColor));
-                updateColors |= CheckedField(() => GolemColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(GolemColor)), GolemColor));
-                updateColors |= CheckedField(() => QueenColor = EditorGUILayout.ColorField(ObjectNames.NicifyVariableName(nameof(QueenColor)), QueenColor));
+                updateColors |= CheckedField(() => DebugSettings.HumanColor = EditorGUILayout.ColorField(humanColorContent, DebugSettings.HumanColor));
+                updateColors |= CheckedField(() => DebugSettings.GolemColor = EditorGUILayout.ColorField(golemColorContent, DebugSettings.GolemColor));
+                updateColors |= CheckedField(() => DebugSettings.QueenColor = EditorGUILayout.ColorField(queenColorContent, DebugSettings.QueenColor));
                 regenerateArrowMesh |= updateColors;
                 regenerateNodeMesh |= updateColors;
             }
 
-            repaint |= CheckedField(() => DebugSettings.ProbeLineOfSightOverlay = EditorGUILayout.Toggle(ObjectNames.NicifyVariableName(nameof(DebugSettings.ProbeLineOfSightOverlay)), DebugSettings.ProbeLineOfSightOverlay));
+            repaint |= CheckedField(() => DebugSettings.ProbeLineOfSightOverlay = EditorGUILayout.Toggle(probeLineOfSightOverlayContent, DebugSettings.ProbeLineOfSightOverlay));
 
             repaint |= regenerateLineMesh || regenerateNodeMesh || regenerateArrowMesh;
-
-            if (repaint)
-                SaveDebugValues();
-
         }
         private static void SaveDebugValues()
         {
@@ -356,15 +377,15 @@ namespace PassivePicasso.RainOfStages.Designer
         {
             if (colormap == null)
                 colormap = new Dictionary<HullMask, Color> {
-                    { HullMask.Human, HumanColor },
-                    { HullMask.Golem, GolemColor },
-                    { HullMask.BeetleQueen, QueenColor },
+                    { HullMask.Human, DebugSettings.HumanColor },
+                    { HullMask.Golem, DebugSettings.GolemColor },
+                    { HullMask.BeetleQueen, DebugSettings.QueenColor },
                 };
             else
             {
-                colormap[HullMask.Human] = HumanColor;
-                colormap[HullMask.Golem] = GolemColor;
-                colormap[HullMask.BeetleQueen] = QueenColor;
+                colormap[HullMask.Human] = DebugSettings.HumanColor;
+                colormap[HullMask.Golem] = DebugSettings.GolemColor;
+                colormap[HullMask.BeetleQueen] = DebugSettings.QueenColor;
             }
 
             var nodeCorrection = (Vector3.left * 0.5f) + (Vector3.back * 0.5f);
@@ -378,8 +399,8 @@ namespace PassivePicasso.RainOfStages.Designer
                 if (regenerateNodeMesh)
                 {
                     groundNodeMesh = GenerateNodeMesh(groundNodes, nodeCorrection);
-                    teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
-                    noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
+                    teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, DebugSettings.TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
+                    noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, DebugSettings.NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
                 }
             }
 
@@ -387,7 +408,6 @@ namespace PassivePicasso.RainOfStages.Designer
             {
                 if (regenerateLineMesh)
                     airLinkLineMesh = airNodeGraph.GenerateLinkDebugMesh((HullMask)DebugSettings.HullMask);
-                //airLinkLineMesh = GenerateLinkMesh(LinkMeshType.line, airNodes, airLinks, 0);
                 if (regenerateArrowMesh)
                     airLinkArrowMesh = GenerateLinkMesh(LinkMeshType.arrow, airNodes, airLinks);
                 if (regenerateNodeMesh)
@@ -398,12 +418,12 @@ namespace PassivePicasso.RainOfStages.Designer
             regenerateLineMesh = false;
             regenerateArrowMesh = false;
         }
-        static bool CheckedField(Action drawField, string label = null)
+        static bool CheckedField(Action drawField, GUIContent label = null)
         {
             EditorGUI.BeginChangeCheck();
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (!string.IsNullOrEmpty(label))
+                if (label != null)
                     EditorGUILayout.LabelField(label);
                 drawField();
             }
@@ -527,11 +547,11 @@ namespace PassivePicasso.RainOfStages.Designer
                                     new Vector3(nodeBPos.x, nodeBPos.y, nodeBPos.z), color);
                             break;
                         case LinkMeshType.arrow:
-                            float halfArrowWidth = arrowSize / 2;
+                            float halfArrowWidth = DebugSettings.ArrowSize / 2;
 
-                            var offset = percentageOffset ? Mathf.Clamp(arrowOffset, 0, 1) * displacement.magnitude : arrowOffset;
+                            var offset = DebugSettings.PercentageOffset ? Mathf.Clamp(DebugSettings.ArrowOffset, 0, 1) * displacement.magnitude : DebugSettings.ArrowOffset;
                             nodeAModA = nodeAPos + (linkDirection * offset);
-                            nodeAModB = nodeAPos + (linkDirection * (offset + arrowSize));
+                            nodeAModB = nodeAPos + (linkDirection * (offset + DebugSettings.ArrowSize));
 
                             var linkCross = Vector3.Cross(linkDirection, Vector3.up).normalized;
 
@@ -604,6 +624,29 @@ namespace PassivePicasso.RainOfStages.Designer
                 var cleanedGuid = guid.ToString().ToLower().Replace("-", "");
                 return cleanedGuid;
             }
+        }
+        private static float CalculateHeight()
+        {
+            if (!DebugSettings.ShowGraphTools) return 23f;
+            var result = 84f;
+            var debugType = typeof(DebugSettings);
+            var fields = debugType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            var toggleFields = fields.Where(fi => fi.FieldType == typeof(bool)).ToArray();
+            if (DebugSettings.ShowSettings)
+                result += (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + 1) * toggleFields.Length;
+            var trueToggles = toggleFields.Where(fi => (bool)fi.GetValue(DebugSettings)).ToArray();
+
+            return result;
+        }
+        private static float CalculateWidth()
+        {
+            if (!DebugSettings.ShowGraphTools) return 24f;
+
+            var result = 160f;
+            if (DebugSettings.ShowSettings)
+                result += 140f;
+
+            return result;
         }
     }
 }
