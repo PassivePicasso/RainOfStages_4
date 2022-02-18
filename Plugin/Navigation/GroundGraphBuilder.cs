@@ -18,7 +18,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private int footprintSteps = 6;
 
-        public float nodeSeparation = 8;
         public float marginFromUp = 0.5f;
 
         [SerializeField, HideInInspector] private float lastMargin;
