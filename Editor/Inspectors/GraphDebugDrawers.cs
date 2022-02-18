@@ -178,12 +178,24 @@ namespace PassivePicasso.RainOfStages.Designer
                 EditorGUI.BeginChangeCheck();
                 try
                 {
-                    if (DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent("X"), GUILayout.Width(EditorGUIUtility.singleLineHeight), GUILayout.Height(EditorGUIUtility.singleLineHeight)))
+                    float slh = EditorGUIUtility.singleLineHeight;
+                    var buttonWidth = GUILayout.Width(slh);
+                    var buttonHeight = GUILayout.Height(slh);
+                    if (DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent("X", "Close NodeGraph Tools"), buttonWidth, buttonHeight))
                         DebugSettings.ShowGraphTools = false;
-                    if (!DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent(">"), GUILayout.Width(EditorGUIUtility.singleLineHeight), GUILayout.Height(EditorGUIUtility.singleLineHeight)))
+                    if (!DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent(">", "Open NodeGraph Tools"), buttonWidth, buttonHeight))
                         DebugSettings.ShowGraphTools = true;
 
                     if (!DebugSettings.ShowGraphTools) return;
+
+                    GUI.Label(new Rect(24, 3, width - 36, slh), "NodeGraph Tools");
+
+                    if (!DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), ">"))
+                        DebugSettings.ShowSettings = true;
+                    if (DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), "<"))
+                        DebugSettings.ShowSettings = false;
+
+                    if (DebugSettings.ShowSettings) GUILayout.BeginHorizontal();
 
                     if (GUILayout.Button(new GUIContent("Build Ground Graph")))
                     {
@@ -195,7 +207,9 @@ namespace PassivePicasso.RainOfStages.Designer
                         foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
                             agb.Build();
                     }
-                    if (DebugSettings.ShowSettings = GUILayout.Toggle(DebugSettings.ShowSettings, "Debug Settings"))
+                    if (DebugSettings.ShowSettings) GUILayout.EndHorizontal();
+
+                    if (DebugSettings.ShowSettings)
                         using (var scroll = new GUILayout.ScrollViewScope(scrollPosition))
                         {
                             OnDebugGUI();
@@ -628,13 +642,12 @@ namespace PassivePicasso.RainOfStages.Designer
         private static float CalculateHeight()
         {
             if (!DebugSettings.ShowGraphTools) return 23f;
-            var result = 84f;
+            var result = 64f;
             var debugType = typeof(DebugSettings);
             var fields = debugType.GetFields(BindingFlags.Public | BindingFlags.Instance);
             var toggleFields = fields.Where(fi => fi.FieldType == typeof(bool)).ToArray();
             if (DebugSettings.ShowSettings)
                 result += (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + 1) * toggleFields.Length;
-            var trueToggles = toggleFields.Where(fi => (bool)fi.GetValue(DebugSettings)).ToArray();
 
             return result;
         }
