@@ -17,11 +17,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         public int seed;
-        public float nodeSeparation = 8;
         public int passes = 5;
         private int pointsPerLeaf;
-
-        public List<NavigationProbe> Probes = new List<NavigationProbe>();
 
         IEnumerable<GameObject> FindCollidersOnLayer(int layer)
         {
@@ -36,14 +33,14 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             if (!FindCollidersOnLayer(LayerIndex.world.intVal).Any())
                 return;
 
-            Probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
+            var probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
             InitializeSeed(seed);
             var nodePositions = new List<Vector3>();
             Profiler.BeginSample("Acquire Node Positions");
             var nodeArea = Mathf.PI * (nodeSeparation * nodeSeparation);
             for (int p = 0; p < passes; p++)
             {
-                foreach (var probe in Probes)
+                foreach (var probe in probes)
                 {
                     var probeArea = Mathf.PI * (probe.distance * probe.distance);
                     var relativeArea = probeArea / nodeArea;
