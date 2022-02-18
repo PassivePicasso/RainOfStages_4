@@ -117,6 +117,7 @@ namespace PassivePicasso.RainOfStages.Designer
         [InitializeOnLoadMethod]
         static void InitializeDebugDrawer()
         {
+            LoadDebugValues();
             triangleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PathHelper.RoSPath("RoSShared", "Materials", "VertexColor.mat"));
             linkMaterial = GetDebugMaterial();
             nodeMaterial = GetDebugMaterial(true);
@@ -136,27 +137,27 @@ namespace PassivePicasso.RainOfStages.Designer
             SceneView.onSceneGUIDelegate -= ExternalSceneGui;
             SceneView.onSceneGUIDelegate += ExternalSceneGui;
         }
-
         private static void ExternalSceneGui(SceneView sceneView)
         {
-            var probes = Selection.GetFiltered<NavigationProbe>(SelectionMode.Deep);
-            var groundGraphBuilders = Selection.GetFiltered<GroundGraphBuilder>(SelectionMode.Deep);
-            var airGraphBuilders = Selection.GetFiltered<AirGraphBuilder>(SelectionMode.Deep);
-            if (probes.Any() || groundGraphBuilders.Any() || airGraphBuilders.Any())
-            {
+            if (!GraphBuilder.DisplayGraphToolOverlay) return;
 
+            var probe = GameObject.FindObjectOfType<NavigationProbe>();
+            var groundGraphBuilders = GameObject.FindObjectOfType<GroundGraphBuilder>();
+            var airGraphBuilders = GameObject.FindObjectOfType<AirGraphBuilder>();
+            if (probe || groundGraphBuilders || airGraphBuilders)
+            {
                 Handles.BeginGUI();
-                var height = showSettings ? 360 : 64;
-                var width = showSettings ? 300 : 134;
+                var height = CalculateHeight();
+                var width = showSettings ? 300 : 160;
                 Rect screenRect = new Rect(4, 4, width, height);
                 GUILayout.BeginArea(screenRect, EditorStyles.helpBox);
 
-                if (GUILayout.Button("Build Ground Graph"))
+                if (GUILayout.Button(new GUIContent("Build Ground Graph")))
                 {
                     foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
                         ggb.Build();
                 }
-                if (GUILayout.Button("Build Air Graph"))
+                if (GUILayout.Button(new GUIContent("Build Air Graph")))
                 {
                     foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
                         agb.Build();
@@ -172,6 +173,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
                 if (screenRect.Contains(mousePos) && Event.current.type == EventType.MouseDown)
                     Event.current.Use();
+
                 Handles.EndGUI();
             }
         }
@@ -180,7 +182,6 @@ namespace PassivePicasso.RainOfStages.Designer
             regenerateLineMesh = true;
             repaint = true;
         }
-
         private static void Draw(Camera camera)
         {
             if (DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
@@ -251,7 +252,6 @@ namespace PassivePicasso.RainOfStages.Designer
                 }
             }
         }
-
         private static void UpdateMeshCheck()
         {
             if (repaint)
@@ -279,11 +279,20 @@ namespace PassivePicasso.RainOfStages.Designer
                 repaint = false;
             }
         }
+        private static float CalculateHeight()
+        {
+            var result = 64f;
+            var debugType = typeof(DebugSettings);
+            var fields = debugType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            var toggleFields = fields.Where(fi => fi.FieldType == typeof(bool)).ToArray();
+            if (showSettings)
+                result += (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + 1) * toggleFields.Length;
+            var trueToggles = toggleFields.Where(fi => (bool)fi.GetValue(DebugSettings)).ToArray();
 
-
+            return result;
+        }
         public static void OnDebugGUI()
         {
-            LoadDebugValues();
             regenerateLineMesh |= CheckedField(() => DebugSettings.HullMask = (int)(HullMask)EditorGUILayout.EnumFlagsField(ObjectNames.NicifyVariableName(nameof(DebugSettings.HullMask)), (HullMask)DebugSettings.HullMask));
 
 
@@ -334,7 +343,6 @@ namespace PassivePicasso.RainOfStages.Designer
             string key = GUIDName(RainOfStagesSceneInfoEditorSettings);
             EditorPrefs.SetString(key, JsonUtility.ToJson(DebugSettings));
         }
-
         private static void LoadDebugValues()
         {
             string key = GUIDName(RainOfStagesSceneInfoEditorSettings);
@@ -344,7 +352,6 @@ namespace PassivePicasso.RainOfStages.Designer
                 DebugSettings = JsonUtility.FromJson<DebugSettings>(json);
             }
         }
-
         private static void RegenerateMeshes()
         {
             if (colormap == null)
@@ -387,10 +394,10 @@ namespace PassivePicasso.RainOfStages.Designer
                     airNodeMesh = GenerateNodeMesh(airNodes, nodeCorrection);
             }
 
+            regenerateNodeMesh = false;
             regenerateLineMesh = false;
             regenerateArrowMesh = false;
         }
-
         static bool CheckedField(Action drawField, string label = null)
         {
             EditorGUI.BeginChangeCheck();
@@ -402,7 +409,6 @@ namespace PassivePicasso.RainOfStages.Designer
             }
             return EditorGUI.EndChangeCheck();
         }
-
         private static Mesh GenerateNodeExtraMesh(NodeGraph.Node[] nodes, Vector3 offset, Color color, Predicate<NodeGraph.Node> predicate)
         {
             var vertices = new List<Vector3>();
@@ -557,7 +563,6 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return linkMesh;
         }
-
         private static Material GetDebugMaterial(bool nodes = false)
         {
             Material material = null;
@@ -587,7 +592,6 @@ namespace PassivePicasso.RainOfStages.Designer
 
             return material;
         }
-
         static string GUIDName(string value)
         {
             value = $"ThunderKit_RoS_{value}";

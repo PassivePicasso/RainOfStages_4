@@ -23,6 +23,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             typeof(NodeGraph).GetField("links", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         public NodeGraph nodeGraph;
+        public static bool DisplayGraphToolOverlay;
 
         protected static readonly Vector3[] cubeVertices = new[]
         {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using static UnityEditor.EditorGUILayout;
 
@@ -12,6 +11,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
     public class GraphBuilderEditor : Editor
     {
         protected GraphBuilder builder;
+        private static GUIContent overlayContent ;
 
         protected virtual IEnumerable<string> ExcludedProperties()
         {
@@ -22,6 +22,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
         private void OnEnable()
         {
             excludedProperties = ExcludedProperties().Prepend("m_Script").Prepend("nodeGraph").Distinct().ToArray();
+            overlayContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(GraphBuilder.DisplayGraphToolOverlay)));
         }
         protected virtual void OnDrawTitleButtons()
         {
@@ -32,6 +33,7 @@ namespace PassivePicasso.RainOfStages.Designer.Inspectors
             builder = target as GraphBuilder;
             if (!builder) return;
 
+            GraphBuilder.DisplayGraphToolOverlay = GUILayout.Toggle(GraphBuilder.DisplayGraphToolOverlay, overlayContent);
             using (new HorizontalScope())
             {
                 if (GUILayout.Button("Build"))
