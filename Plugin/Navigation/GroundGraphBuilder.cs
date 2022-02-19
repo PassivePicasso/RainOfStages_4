@@ -1,5 +1,4 @@
 ﻿using DataStructures.ViliWonka.KDTree;
-using PassivePicasso.RainOfStages.Plugin.Utility;
 using RoR2;
 using RoR2.Navigation;
 using System.Collections.Generic;
@@ -27,8 +26,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         private TriangleCollection TriangleCollection;
         [SerializeField, HideInInspector] public Mesh mesh;// { get; private set; }
         private MeshFilter[] meshFilters;
-
-        public List<int> zeroOutboundLinkIndices = new List<int>();
 
         protected override void OnBuild()
         {
@@ -283,8 +280,11 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 var node = nodes[i];
                 uint size = (uint)links.Count(l => l.nodeIndexA.nodeIndex == i);
-                if (size == 0)
-                    Debug.LogError("Zero Link Node found");
+                if (size == 0 && i >= staticNodes.Count)
+                {
+                    node.flags = NodeFlags.NoCharacterSpawn | NodeFlags.NoChestSpawn | NodeFlags.NoShrineSpawn;
+                    node.forbiddenHulls = AllHullsMask;
+                }
                 node.linkListIndex = new LinkListIndex { index = linkIndex, size = size };
                 linkIndex += (int)size;
                 nodes[i] = node;
@@ -361,7 +361,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             meshFilters = probes.SelectMany(p =>
             {
                 var hits = Physics.OverlapSphereNonAlloc(p.transform.position, p.distance, colliders, LayerIndex.world.mask);
-                return colliders.Take(hits).SelectMany(collider => collider.GetComponents<MeshFilter>());
+                var hitColliders = colliders.Take(hits);
+                var hitMeshFilters = hitColliders.SelectMany(collider => collider.GetComponents<MeshFilter>());
+                var included = hitMeshFilters.Where(mf => mf.GetComponentsInParent<ExcludeFromNavigation>().Length == 0);
+                return included;
             }).Distinct().ToArray();
             Profiler.EndSample();
 
