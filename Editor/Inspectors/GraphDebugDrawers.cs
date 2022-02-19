@@ -49,19 +49,20 @@ namespace PassivePicasso.RainOfStages.Designer
         };
 
         private static readonly HullMask[] masks = new[] { HullMask.BeetleQueen, HullMask.Golem, HullMask.Human };
+        private static readonly Vector3[] maskOffsets = new[] { Vector3.right, Vector3.left, Vector3.zero };
 
         public static DebugSettings DebugSettings = new DebugSettings
         {
             VerticalOffset = 1f,
-            ArrowSize = 1f,
-            ArrowOffset = .51f,
-            PercentageOffset = true,
             HumanColor = Color.green,
             GolemColor = Color.blue,
             QueenColor = Color.red,
             NoCeilingColor = Color.cyan,
             TeleporterOkColor = Color.yellow,
-            HullMask = (int)(HullMask.Human | HullMask.Golem | HullMask.BeetleQueen)
+            NoCharacterSpawnColor = Color.white,
+            NoChestSpawnColor = Color.magenta,
+            NoShrineSpawnColor = Color.black,
+            HullMask = (int)HullMask.Human
         };
 
         private static Material triangleMaterial;
@@ -92,26 +93,28 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static Mesh teleporterOkMesh;
         private static Mesh noCeilingMesh;
+        private static Mesh noCharacterSpawnMesh;
+        private static Mesh noChestSpawnMesh;
+        private static Mesh noShrineSpawnMesh;
         private static bool regenerateLineMesh, regenerateArrowMesh, regenerateNodeMesh;
         private static bool repaint;
         private static GUIContent
             hullMaskContent,
-            debugNoCeilingContent,
-            debugTeleporterOkContent,
-            debugGroundNodesContent,
-            debugAirNodesContent,
-            debugGroundLinksContent,
-            debugAirLinksContent,
+            debugGraphContent,
+            debugFlagsContent,
+            debugNodesContent,
+            debugLinksContent,
             verticalOffsetContent,
-            arrowSizeContent,
-            arrowOffsetContent,
-            percentageOffsetContent,
             humanColorContent,
             golemColorContent,
             queenColorContent,
             probeLineOfSightOverlayContent,
             noCeilingColorContent,
-            teleporterOkColorContent;
+            teleporterOkColorContent,
+            noCharacterSpawnColorContent,
+            noChestSpawnColorContent,
+            noShrineSpawnColorContent
+            ;
         #endregion
 
 
@@ -143,22 +146,20 @@ namespace PassivePicasso.RainOfStages.Designer
         static void GenerateGUIContent()
         {
             hullMaskContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.HullMask)));
-            debugNoCeilingContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugNoCeiling)));
-            debugTeleporterOkContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugTeleporterOk)));
-            debugGroundNodesContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugGroundNodes)));
-            debugAirNodesContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugAirNodes)));
-            debugGroundLinksContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugGroundLinks)));
-            debugAirLinksContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugAirLinks)));
+            debugGraphContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugGraph)));
+            debugFlagsContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugFlags)));
+            debugNodesContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugNodes)));
+            debugLinksContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.DebugLinks)));
             verticalOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.VerticalOffset)));
-            arrowSizeContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ArrowSize)));
-            arrowOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ArrowOffset)));
-            percentageOffsetContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.PercentageOffset)));
             humanColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.HumanColor)));
             golemColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.GolemColor)));
             queenColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.QueenColor)));
             probeLineOfSightOverlayContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.ProbeLineOfSightOverlay)));
             noCeilingColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.NoCeilingColor)));
             teleporterOkColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.TeleporterOkColor)));
+            noCharacterSpawnColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.NoCharacterSpawnColor)));
+            noChestSpawnColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.NoChestSpawnColor)));
+            noShrineSpawnColorContent = new GUIContent(ObjectNames.NicifyVariableName(nameof(DebugSettings.NoShrineSpawnColor)));
         }
 
         private static void ExternalSceneGui(SceneView sceneView)
@@ -235,43 +236,48 @@ namespace PassivePicasso.RainOfStages.Designer
         }
         private static void Draw(Camera camera)
         {
-            if (DebugSettings.DebugTeleporterOk && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugSettings.DebugNoCeiling && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugSettings.DebugGroundNodes && groundNodeMesh) Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugSettings.DebugAirNodes && airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
-            if (DebugSettings.DebugAirLinks)
-            {
-                if (airLinkLineMesh)
-                    Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
-                if (airLinkArrowMesh)
-                    Graphics.DrawMesh(airLinkArrowMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
-            }
-            if (DebugSettings.DebugGroundLinks)
-            {
-                var position = Vector3.up * DebugSettings.VerticalOffset;
-                if (groundLinkLineMesh)
-                    Graphics.DrawMesh(groundLinkLineMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
-                if (groundLinkArrowMesh)
-                    Graphics.DrawMesh(groundLinkArrowMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
-            }
-            var probes = Selection.GetFiltered<NavigationProbe>(SelectionMode.Deep);
-            var groundGraphBuilders = Selection.GetFiltered<GroundGraphBuilder>(SelectionMode.Deep);
-            if (probes.Any() || groundGraphBuilders.Any())
-            {
+            if (DebugSettings.DebugFlags.HasFlag(NodeFlags.TeleporterOK) && teleporterOkMesh) Graphics.DrawMesh(teleporterOkMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugFlags.HasFlag(NodeFlags.NoCeiling) && noCeilingMesh) Graphics.DrawMesh(noCeilingMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugFlags.HasFlag(NodeFlags.NoCharacterSpawn) && noCharacterSpawnMesh) Graphics.DrawMesh(noCharacterSpawnMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugFlags.HasFlag(NodeFlags.NoChestSpawn) && noChestSpawnMesh) Graphics.DrawMesh(noChestSpawnMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+            if (DebugSettings.DebugFlags.HasFlag(NodeFlags.NoShrineSpawn) && noShrineSpawnMesh) Graphics.DrawMesh(noShrineSpawnMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
 
-                if (DebugSettings.ProbeLineOfSightOverlay)
-                    foreach (var target in GameObject.FindObjectsOfType<GroundGraphBuilder>())
-                        Graphics.DrawMesh(target.mesh, Vector3.up * 0.1f, Quaternion.identity, triangleMaterial, 0, camera, 0);
-
-                foreach (var probe in GameObject.FindObjectsOfType<NavigationProbe>())
-                {
-                    var color = new Color(probe.navigationProbeColor.r, probe.navigationProbeColor.g, probe.navigationProbeColor.b, 1);
-                    if (!probeMeshes.ContainsKey(probe) || probeColors[probe] != probe.navigationProbeColor)
+            switch (DebugSettings.DebugGraph)
+            {
+                case DebugSettings.Graph.Ground:
+                    if (DebugSettings.DebugNodes && groundNodeMesh)
+                        Graphics.DrawMesh(groundNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+                    if (DebugSettings.DebugLinks)
                     {
-                        probeColors[probe] = probe.navigationProbeColor;
-                        probeMeshes[probe] = GameObject.Instantiate(cube);
-                        probeMeshes[probe].SetIndices(cube.triangles, MeshTopology.Triangles, 0);
-                        probeMeshes[probe].colors = new Color[] {
+                        var position = Vector3.up * DebugSettings.VerticalOffset;
+                        if (groundLinkLineMesh)
+                            Graphics.DrawMesh(groundLinkLineMesh, position, Quaternion.identity, linkMaterial, 0, camera, 0);
+                    }
+                    break;
+                case DebugSettings.Graph.Air:
+                    if (DebugSettings.DebugNodes)
+                    {
+                        if (airNodeMesh) Graphics.DrawMesh(airNodeMesh, Vector3.zero, Quaternion.identity, nodeMaterial, 0, camera, 0);
+
+                    }
+                    if (DebugSettings.DebugLinks && airLinkLineMesh)
+                        Graphics.DrawMesh(airLinkLineMesh, Vector3.zero, Quaternion.identity, linkMaterial, 0, camera, 0);
+                    break;
+            }
+
+            if (DebugSettings.ProbeLineOfSightOverlay)
+                foreach (var target in GameObject.FindObjectsOfType<GroundGraphBuilder>())
+                    Graphics.DrawMesh(target.mesh, Vector3.up * 0.1f, Quaternion.identity, triangleMaterial, 0, camera, 0);
+
+            foreach (var probe in GameObject.FindObjectsOfType<NavigationProbe>())
+            {
+                var color = new Color(probe.navigationProbeColor.r, probe.navigationProbeColor.g, probe.navigationProbeColor.b, 1);
+                if (!probeMeshes.ContainsKey(probe) || probeColors[probe] != probe.navigationProbeColor)
+                {
+                    probeColors[probe] = probe.navigationProbeColor;
+                    probeMeshes[probe] = GameObject.Instantiate(cube);
+                    probeMeshes[probe].SetIndices(cube.triangles, MeshTopology.Triangles, 0);
+                    probeMeshes[probe].colors = new Color[] {
                             Color.Lerp(color, Color.black,0.25f),
                             Color.Lerp(color, Color.black,0.25f),
                             Color.Lerp(color, Color.black,0.25f),
@@ -297,10 +303,9 @@ namespace PassivePicasso.RainOfStages.Designer
                             Color.Lerp(color, Color.black,0),
                             Color.Lerp(color, Color.black,0),
                         };
-                    }
-                    var matrix = Matrix4x4.TRS(probe.transform.position, Quaternion.identity, Vector3.one * 2);
-                    Graphics.DrawMesh(probeMeshes[probe], matrix, triangleMaterial, 0, camera);
                 }
+                var matrix = Matrix4x4.TRS(probe.transform.position, Quaternion.identity, Vector3.one * 2);
+                Graphics.DrawMesh(probeMeshes[probe], matrix, triangleMaterial, 0, camera);
             }
         }
         private static void UpdateMeshCheck()
@@ -332,44 +337,28 @@ namespace PassivePicasso.RainOfStages.Designer
         }
         public static void OnDebugGUI()
         {
-            regenerateLineMesh |= CheckedField(() => DebugSettings.HullMask = (int)(HullMask)EditorGUILayout.EnumFlagsField(hullMaskContent, (HullMask)DebugSettings.HullMask));
+            EditorGUIUtility.labelWidth = 170f;
+            regenerateLineMesh |= CheckedField(() => DebugSettings.HullMask = (int)(HullMask)EditorGUILayout.EnumPopup(hullMaskContent, (HullMask)DebugSettings.HullMask));
+            regenerateNodeMesh |= regenerateLineMesh |= CheckedField(() => DebugSettings.DebugGraph = (DebugSettings.Graph)EditorGUILayout.EnumPopup(debugGraphContent, DebugSettings.DebugGraph));
+            regenerateNodeMesh |= repaint |= CheckedField(() => DebugSettings.DebugFlags = (NodeFlags)EditorGUILayout.EnumFlagsField(debugFlagsContent, DebugSettings.DebugFlags));
 
-
-            repaint |= CheckedField(() => DebugSettings.DebugNoCeiling = EditorGUILayout.Toggle(debugNoCeilingContent, DebugSettings.DebugNoCeiling));
-            if (DebugSettings.DebugNoCeiling)
-                regenerateNodeMesh |= CheckedField(() => DebugSettings.NoCeilingColor = EditorGUILayout.ColorField(DebugSettings.NoCeilingColor), noCeilingColorContent);
-
-            repaint |= CheckedField(() => DebugSettings.DebugTeleporterOk = EditorGUILayout.Toggle(debugTeleporterOkContent, DebugSettings.DebugTeleporterOk));
-            if (DebugSettings.DebugTeleporterOk)
-                regenerateNodeMesh |= CheckedField(() => DebugSettings.TeleporterOkColor = EditorGUILayout.ColorField(DebugSettings.TeleporterOkColor), teleporterOkColorContent);
-
-            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugGroundNodes = EditorGUILayout.Toggle(debugGroundNodesContent, DebugSettings.DebugGroundNodes));
-            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugGroundLinks = EditorGUILayout.Toggle(debugGroundLinksContent, DebugSettings.DebugGroundLinks));
-
-
-            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugAirNodes = EditorGUILayout.Toggle(debugAirNodesContent, DebugSettings.DebugAirNodes));
-            regenerateLineMesh |= CheckedField(() => DebugSettings.DebugAirLinks = EditorGUILayout.Toggle(debugAirLinksContent, DebugSettings.DebugAirLinks));
-            if (DebugSettings.DebugGroundLinks)
-            {
-                repaint |= CheckedField(() => DebugSettings.VerticalOffset = EditorGUILayout.Slider(verticalOffsetContent, DebugSettings.VerticalOffset, 0, 20));
-            }
-            if (DebugSettings.DebugGroundLinks || DebugSettings.DebugAirLinks)
-            {
-                regenerateArrowMesh |= CheckedField(() => DebugSettings.ArrowSize = EditorGUILayout.Slider(arrowSizeContent, DebugSettings.ArrowSize, 0.5f, 10));
-                regenerateArrowMesh |= CheckedField(() => DebugSettings.ArrowOffset = EditorGUILayout.Slider(arrowOffsetContent, DebugSettings.ArrowOffset, 0, DebugSettings.PercentageOffset ? 1 : 20));
-                regenerateArrowMesh |= CheckedField(() => DebugSettings.PercentageOffset = EditorGUILayout.Toggle(percentageOffsetContent, DebugSettings.PercentageOffset));
-            }
-            if (DebugSettings.DebugGroundLinks || DebugSettings.DebugGroundNodes || DebugSettings.DebugAirLinks || DebugSettings.DebugAirNodes)
-            {
-                bool updateColors = false;
-                updateColors |= CheckedField(() => DebugSettings.HumanColor = EditorGUILayout.ColorField(humanColorContent, DebugSettings.HumanColor));
-                updateColors |= CheckedField(() => DebugSettings.GolemColor = EditorGUILayout.ColorField(golemColorContent, DebugSettings.GolemColor));
-                updateColors |= CheckedField(() => DebugSettings.QueenColor = EditorGUILayout.ColorField(queenColorContent, DebugSettings.QueenColor));
-                regenerateArrowMesh |= updateColors;
-                regenerateNodeMesh |= updateColors;
-            }
-
+            regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugNodes = EditorGUILayout.Toggle(debugNodesContent, DebugSettings.DebugNodes));
+            regenerateLineMesh|= CheckedField(() => DebugSettings.DebugLinks = EditorGUILayout.Toggle(debugLinksContent, DebugSettings.DebugLinks));
             repaint |= CheckedField(() => DebugSettings.ProbeLineOfSightOverlay = EditorGUILayout.Toggle(probeLineOfSightOverlayContent, DebugSettings.ProbeLineOfSightOverlay));
+
+            repaint |= CheckedField(() => DebugSettings.VerticalOffset = EditorGUILayout.Slider(verticalOffsetContent, DebugSettings.VerticalOffset, 0, 20));
+
+            bool updateColors = false;
+            updateColors |= CheckedField(() => DebugSettings.NoCeilingColor = EditorGUILayout.ColorField(noCeilingColorContent, DebugSettings.NoCeilingColor));
+            updateColors |= CheckedField(() => DebugSettings.TeleporterOkColor = EditorGUILayout.ColorField(teleporterOkColorContent, DebugSettings.TeleporterOkColor));
+            updateColors |= CheckedField(() => DebugSettings.NoCharacterSpawnColor = EditorGUILayout.ColorField(noCharacterSpawnColorContent, DebugSettings.NoCharacterSpawnColor));
+            updateColors |= CheckedField(() => DebugSettings.NoChestSpawnColor = EditorGUILayout.ColorField(noChestSpawnColorContent, DebugSettings.NoChestSpawnColor));
+            updateColors |= CheckedField(() => DebugSettings.NoShrineSpawnColor = EditorGUILayout.ColorField(noShrineSpawnColorContent, DebugSettings.NoShrineSpawnColor));
+            updateColors |= CheckedField(() => DebugSettings.HumanColor = EditorGUILayout.ColorField(humanColorContent, DebugSettings.HumanColor));
+            updateColors |= CheckedField(() => DebugSettings.GolemColor = EditorGUILayout.ColorField(golemColorContent, DebugSettings.GolemColor));
+            updateColors |= CheckedField(() => DebugSettings.QueenColor = EditorGUILayout.ColorField(queenColorContent, DebugSettings.QueenColor));
+            regenerateArrowMesh |= updateColors;
+            regenerateNodeMesh |= updateColors;
 
             repaint |= regenerateLineMesh || regenerateNodeMesh || regenerateArrowMesh;
         }
@@ -413,8 +402,11 @@ namespace PassivePicasso.RainOfStages.Designer
                 if (regenerateNodeMesh)
                 {
                     groundNodeMesh = GenerateNodeMesh(groundNodes, nodeCorrection);
-                    teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.right, DebugSettings.TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
-                    noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.left, DebugSettings.NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
+                    teleporterOkMesh = GenerateNodeExtraMesh(groundNodes, Vector3.back + Vector3.right + nodeCorrection, DebugSettings.TeleporterOkColor, node => node.flags.HasFlag(NodeFlags.TeleporterOK));
+                    noCeilingMesh = GenerateNodeExtraMesh(groundNodes, Vector3.back + Vector3.left + nodeCorrection, DebugSettings.NoCeilingColor, node => node.flags.HasFlag(NodeFlags.NoCeiling));
+                    noCharacterSpawnMesh = GenerateNodeExtraMesh(groundNodes, Vector3.forward + nodeCorrection, DebugSettings.NoCharacterSpawnColor, node => node.flags.HasFlag(NodeFlags.NoCharacterSpawn));
+                    noChestSpawnMesh = GenerateNodeExtraMesh(groundNodes, Vector3.forward + Vector3.right + nodeCorrection, DebugSettings.NoChestSpawnColor, node => node.flags.HasFlag(NodeFlags.NoChestSpawn));
+                    noShrineSpawnMesh = GenerateNodeExtraMesh(groundNodes, Vector3.forward + Vector3.left + nodeCorrection, DebugSettings.NoShrineSpawnColor, node => node.flags.HasFlag(NodeFlags.NoShrineSpawn));
                 }
             }
 
@@ -432,15 +424,10 @@ namespace PassivePicasso.RainOfStages.Designer
             regenerateLineMesh = false;
             regenerateArrowMesh = false;
         }
-        static bool CheckedField(Action drawField, GUIContent label = null)
+        static bool CheckedField(Action drawField)
         {
             EditorGUI.BeginChangeCheck();
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (label != null)
-                    EditorGUILayout.LabelField(label);
-                drawField();
-            }
+            drawField();
             return EditorGUI.EndChangeCheck();
         }
         private static Mesh GenerateNodeExtraMesh(NodeGraph.Node[] nodes, Vector3 offset, Color color, Predicate<NodeGraph.Node> predicate)
@@ -487,18 +474,19 @@ namespace PassivePicasso.RainOfStages.Designer
                 var position = node.position;
                 try
                 {
-                    foreach (var mask in masks)
+                    for (int i = 0; i < masks.Length; i++)
+                    {
+                        var mask = masks[i];
                         if (!node.forbiddenHulls.HasFlag(mask))
                         {
-                            for (int i = 0; i < cubeTriangles.Length; i += 3)
+                            for (int j = 0; j < cubeTriangles.Length; j += 3)
                                 AddTriangle(
-                                    cubeVertices[cubeTriangles[i + 0]] + position + offset,
-                                    cubeVertices[cubeTriangles[i + 1]] + position + offset,
-                                    cubeVertices[cubeTriangles[i + 2]] + position + offset,
+                                    cubeVertices[cubeTriangles[j + 0]] + position + offset + maskOffsets[i],
+                                    cubeVertices[cubeTriangles[j + 1]] + position + offset + maskOffsets[i],
+                                    cubeVertices[cubeTriangles[j + 2]] + position + offset + maskOffsets[i],
                                     colormap[mask]);
-
-                            position += Vector3.up;
                         }
+                    }
                 }
                 catch { }
             }
@@ -643,11 +631,8 @@ namespace PassivePicasso.RainOfStages.Designer
         {
             if (!DebugSettings.ShowGraphTools) return 23f;
             var result = 64f;
-            var debugType = typeof(DebugSettings);
-            var fields = debugType.GetFields(BindingFlags.Public | BindingFlags.Instance);
-            var toggleFields = fields.Where(fi => fi.FieldType == typeof(bool)).ToArray();
             if (DebugSettings.ShowSettings)
-                result += (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + 1) * toggleFields.Length;
+                result += EditorGUIUtility.singleLineHeight * (10);
 
             return result;
         }
@@ -657,7 +642,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             var result = 160f;
             if (DebugSettings.ShowSettings)
-                result += 140f;
+                result += 150f;
 
             return result;
         }
