@@ -18,7 +18,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public int seed;
         public int passes = 5;
-        private int pointsPerLeaf;
+        private int pointsPerLeaf = 8;
 
         IEnumerable<GameObject> FindCollidersOnLayer(int layer)
         {
