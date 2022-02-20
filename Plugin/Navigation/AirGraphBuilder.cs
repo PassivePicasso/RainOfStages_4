@@ -33,7 +33,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             if (!FindCollidersOnLayer(LayerIndex.world.intVal).Any())
                 return;
 
-            var probes = new List<NavigationProbe>(GetComponentsInChildren<NavigationProbe>());
+            var probes = new List<NavigationProbe>(FindObjectsOfType<NavigationProbe>());
             InitializeSeed(seed);
             var nodePositions = new List<Vector3>();
             Profiler.BeginSample("Acquire Node Positions");
