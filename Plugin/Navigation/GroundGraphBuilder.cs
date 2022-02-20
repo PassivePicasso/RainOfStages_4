@@ -27,6 +27,20 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         [SerializeField, HideInInspector] public Mesh mesh;// { get; private set; }
         private MeshFilter[] meshFilters;
 
+        private void Update()
+        {
+            var probes = FindObjectsOfType<NavigationProbe>();
+            var update = false;
+            for (int i = 0; i < probes.Length; i++)
+            {
+                if (probes[i].IsDirty)
+                    update = true;
+                probes[i].IsDirty = false;
+            }
+            if (update)
+                UpdateTriangleCollections(probes);
+        }
+
         protected override void OnBuild()
         {
             var nodes = new List<Node>();

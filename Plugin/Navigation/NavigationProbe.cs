@@ -10,6 +10,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         public float distance = 15;
         private float lastDistance = float.MinValue;
         public bool drawVolumeSphere = false;
+        public bool IsDirty { get; set; }
 
         void Update()
         {
@@ -17,7 +18,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             {
                 transform.hasChanged = false;
                 lastDistance = distance;
-                FindObjectOfType<GroundGraphBuilder>().UpdateTriangleCollections();
+                IsDirty = true;
             }
         }
 
