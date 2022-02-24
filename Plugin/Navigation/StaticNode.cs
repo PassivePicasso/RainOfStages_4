@@ -69,5 +69,11 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Gizmos.color = nodeColor;
             Gizmos.DrawCube(position, Vector3.one);
         }
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = (Color.white * nodeColor);
+            Gizmos.DrawWireCube(position, Vector3.one);
+        }
+
     }
 }
