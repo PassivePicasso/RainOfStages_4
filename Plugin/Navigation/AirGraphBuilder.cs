@@ -33,14 +33,13 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             if (!FindCollidersOnLayer(LayerIndex.world.intVal).Any())
                 return;
 
-            var probes = new List<NavigationProbe>(FindObjectsOfType<NavigationProbe>());
             InitializeSeed(seed);
             var nodePositions = new List<Vector3>();
             Profiler.BeginSample("Acquire Node Positions");
             var nodeArea = Mathf.PI * (nodeSeparation * nodeSeparation);
             for (int p = 0; p < passes; p++)
             {
-                foreach (var probe in probes)
+                foreach (var probe in NavigationProbe.ActiveProbes)
                 {
                     var probeArea = Mathf.PI * (probe.distance * probe.distance);
                     var relativeArea = probeArea / nodeArea;
@@ -166,7 +165,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
                 //Find nodes within link range
                 Profiler.BeginSample("Query for nodes in linkDistance");
-                query.Radius(pointTree, nodes[i].position, nodeSeparation * 2.5f, resultsIndices, whitelist: null, blackList);
+                query.Radius(pointTree, nodes[i].position, nodeSeparation * LinkDistanceMultiplier, resultsIndices, whitelist: null, blackList);
                 Profiler.EndSample();
                 Profiler.BeginSample("TryAddLink");
                 foreach (var nni in resultsIndices)

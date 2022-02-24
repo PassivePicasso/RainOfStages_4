@@ -28,6 +28,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
         }
 
         public int Count => triangles.Count;
+        public int VertexCount => vertices.Count;
+
 
         public TriangleCollection(List<Vector3> vertices, int[] indices)
         {

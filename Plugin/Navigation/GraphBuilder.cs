@@ -12,6 +12,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
     [ExecuteAlways]
     public abstract class GraphBuilder : MonoBehaviour
     {
+        public static readonly List<GraphBuilder> ActiveBuilders = new List<GraphBuilder>();
         protected const HullMask AllHullsMask = (HullMask.Human | HullMask.Golem | HullMask.BeetleQueen);
         protected static HullMask[] HullMasks = new[] { HullMask.Human, HullMask.Golem, HullMask.BeetleQueen };
 
@@ -20,8 +21,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public static UnityAction OnBuilt;
 
-        protected static readonly Collider[] colliders = new Collider[128];
-        protected static readonly RaycastHit[] hitArray = new RaycastHit[128];
+        internal static readonly Collider[] colliders = new Collider[128];
+        internal static readonly RaycastHit[] hitArray = new RaycastHit[1];
+        protected static float LinkDistanceMultiplier = 2.5f;
 
         protected readonly HullDef HumanHull = HullDef.Find(HullClassification.Human);
         protected readonly HullDef GolemHull = HullDef.Find(HullClassification.Golem);
@@ -44,6 +46,14 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public float nodeSeparation = 8;
 
+        private void OnEnable()
+        {
+            ActiveBuilders.Add(this);
+        }
+        private void OnDisable()
+        {
+            ActiveBuilders.Remove(this);
+        }
         public void Build()
         {
             OnBuild();

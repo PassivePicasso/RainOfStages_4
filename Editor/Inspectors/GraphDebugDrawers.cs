@@ -1,5 +1,4 @@
-﻿using PassivePicasso.RainOfStages.Configurators;
-using PassivePicasso.RainOfStages.Plugin.Navigation;
+﻿using PassivePicasso.RainOfStages.Plugin.Navigation;
 using PassivePicasso.RainOfStages.Plugin.Utility;
 using RoR2;
 using RoR2.Navigation;
@@ -156,6 +155,8 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static void ExternalSceneGui(SceneView sceneView)
         {
+            if (GraphBuilder.ActiveBuilders.Count == 0) return;
+
             var height = CalculateHeight();
             var width = CalculateWidth();
             Rect screenRect = new Rect(4, 4, width, height);
@@ -256,7 +257,7 @@ namespace PassivePicasso.RainOfStages.Designer
                 foreach (var target in GameObject.FindObjectsOfType<GroundGraphBuilder>())
                     Graphics.DrawMesh(target.mesh, Vector3.up * 0.1f, Quaternion.identity, triangleMaterial, 0, camera, 0);
 
-            foreach (var probe in GameObject.FindObjectsOfType<NavigationProbe>())
+            foreach (var probe in NavigationProbe.ActiveProbes)
             {
                 var color = new Color(probe.navigationProbeColor.r, probe.navigationProbeColor.g, probe.navigationProbeColor.b, 1);
                 if (!probeMeshes.ContainsKey(probe) || probeColors[probe] != probe.navigationProbeColor)

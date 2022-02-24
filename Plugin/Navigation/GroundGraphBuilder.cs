@@ -29,31 +29,26 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         private void Update()
         {
-            var probes = FindObjectsOfType<NavigationProbe>();
             var update = false;
-            for (int i = 0; i < probes.Length; i++)
+            for (int i = 0; i < NavigationProbe.ActiveProbes.Count; i++)
             {
-                if (probes[i].IsDirty)
+                if (NavigationProbe.ActiveProbes[i].IsDirty)
                     update = true;
-                probes[i].IsDirty = false;
+                NavigationProbe.ActiveProbes[i].IsDirty = false;
             }
             if (update)
-                UpdateTriangleCollections(probes);
+                UpdateTriangleCollections();
         }
 
         protected override void OnBuild()
         {
-            var nodes = new List<Node>();
-            var links = new List<Link>();
+            var nodes = new List<Node>(1500);
+            var links = new List<Link>(3000);
             var pointTree = new KDTree();
             pointTree.SetCount(1000);
             pointTree.Rebuild();
             var query = new KDQuery();
             var nodePoints = new List<Vector3>();
-
-            var probes = FindObjectsOfType<NavigationProbe>()
-                .Where(np => np.isActiveAndEnabled)
-                .ToArray();
 
             var staticNodes = StaticNode.StaticNodes;
             for (int i = 0; i < staticNodes.Count; i++)
@@ -69,7 +64,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 };
                 nodes.Add(item);
             }
-            UpdateTriangleCollections(probes);
+            UpdateTriangleCollections();
 
             foreach (var walkable in TriangleCollection)
             {
@@ -94,7 +89,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     for (float b = bStepSize; b < 1f; b += bStepSize)
                     {
                         var position = TriangleCollection.PointInsideNaive(edge.order.a, edge.order.b, edge.order.c, a, b);
-                        TryPoint(position, pointTree, query, probes, nodePoints, nodes);
+                        TryPoint(position, pointTree, query, nodePoints, nodes);
                     }
                 }
             }
@@ -104,9 +99,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Apply(nodeGraphAssetField, $"{gameObject.scene.name}_GroundNodeGraph.asset", nodes, links);
         }
 
-        void TryPoint(Vector3 position, KDTree pointTree, KDQuery query, NavigationProbe[] probes, List<Vector3> nodePoints, List<Node> nodes)
+        void TryPoint(Vector3 position, KDTree pointTree, KDQuery query, List<Vector3> nodePoints, List<Node> nodes)
         {
-            position = SurfacePosition(position);
 
             Profiler.BeginSample("Evaluate separation against kdtree");
             if (pointTree.RootNode != null)
@@ -123,22 +117,25 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             }
             Profiler.EndSample();
 
+            position = SurfacePosition(position);
 
             Profiler.BeginSample("Line of Sight to any probe");
             int probeIndex = 0;
-            for (; probeIndex < probes.Length; probeIndex++)
+            for (; probeIndex < NavigationProbe.ActiveProbes.Count; probeIndex++)
             {
-                var probe = probes[probeIndex];
+                var probe = NavigationProbe.ActiveProbes[probeIndex];
                 var probePosition = probe.transform.position;
                 var distanceToProbe = Vector3.Distance(probePosition, position);
                 var direction = (probePosition - (position + HumanHeightOffset / 2)).normalized;
                 if (distanceToProbe < probe.distance)
                     if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
                         if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
+                        {
                             break;
+                        }
             }
             Profiler.EndSample();
-            if (probeIndex == probes.Length - 1)
+            if (probeIndex == NavigationProbe.ActiveProbes.Count - 1)
                 return;
 
             Profiler.BeginSample("Evaluate position fit");
@@ -214,7 +211,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
         public void LinkNodes(List<Node> nodes, List<Link> links, KDTree pointTree, KDQuery query, List<StaticNode> staticNodes)
         {
-            var resultsIndices = new List<int>();
+            var resultsIndices = new List<int>(nodes.Count);
             Profiler.BeginSample("Construct node links");
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -225,23 +222,28 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     for (int j = 0; j < staticNode.HardLinks.Length; j++)
                     {
                         var destinationNode = staticNode.HardLinks[j];
+                        Profiler.BeginSample("Create Link");
                         links.Add(new Link
                         {
                             nodeIndexA = new NodeIndex(staticNodes.IndexOf(staticNode)),
                             nodeIndexB = new NodeIndex(staticNodes.IndexOf(destinationNode)),
-                            distanceScore = staticNode.distanceScore,
+                            distanceScore = staticNode.overrideDistanceScore ? staticNode.distanceScore : (destinationNode.position - staticNode.position).magnitude,
                             hullMask = (int)(AllHullsMask ^ (destinationNode.forbiddenHulls | staticNode.forbiddenHulls)),
                             jumpHullMask = (int)HullMask.None,
                         });
+                        Profiler.EndSample();
                     }
                     if (!staticNode.allowDynamicOutboundConnections)
                         continue;
                 }
 
+                Profiler.BeginSample("Find Nodes within link range");
                 resultsIndices.Clear();
                 //Find nodes within link range
-                query.Radius(pointTree, nodes[i].position, nodeSeparation * 2.5f, resultsIndices);
+                query.Radius(pointTree, nodes[i].position, nodeSeparation * LinkDistanceMultiplier, resultsIndices);
                 resultsIndices.Remove(i);
+                Profiler.EndSample();
+                Profiler.BeginSample("Evaluate nodes in range for connectivity");
                 foreach (var nni in resultsIndices)
                 {
                     var otherNode = nodes[nni];
@@ -274,6 +276,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     var linkMask = (AllHullsMask ^ (forbiddenLinkHulls | otherNode.forbiddenHulls));
                     if (linkMask == HullMask.None)
                         continue;
+                    Profiler.BeginSample("Create Link");
                     links.Add(new Link
                     {
                         distanceScore = (otherNode.position - node.position).magnitude,
@@ -285,7 +288,10 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                         maxSlope = 90,
                         gateIndex = (byte)otherNode.gateIndex
                     });
+                    Profiler.EndSample();
                 }
+                Profiler.EndSample();
+
             }
 
             int linkIndex = 0;
@@ -319,18 +325,20 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                 var testStart = node.position + offsetVector;
                 var testStop = otherNode.position + offsetVector;
                 var isValid = true;
-                for (float tf = 0; tf <= 1f; tf += 1f / 5f)
-                {
-                    var testPosition = Vector3.Lerp(testStart, testStop, tf);
-                    if (Physics.SphereCastNonAlloc(testPosition, radius, Vector3.down, hitArray, offset + 3) == 0)
-                    {
-                        isValid = false;
-                        break;
-                    }
-                }
 
-                if (isValid && Physics.CapsuleCastNonAlloc(testStart, testStart + heightOffsetVector - offsetVector, radius, direction, hitArray, maxDist) > 0)
-                    isValid = false;
+                //if (isValid && Physics.CapsuleCastNonAlloc(testStart, testStart + heightOffsetVector - offsetVector, radius, direction, hitArray, maxDist, LayerIndex.enemyBody.collisionMask) > 0)
+                //    isValid = false;
+
+                if (isValid)
+                    for (float tf = 0; tf <= 1f; tf += 1f / 5f)
+                    {
+                        var testPosition = Vector3.Lerp(testStart, testStop, tf);
+                        if (Physics.SphereCastNonAlloc(testPosition, radius, Vector3.down, hitArray, offset + 3, LayerIndex.enemyBody.collisionMask) == 0)
+                        {
+                            isValid = false;
+                            break;
+                        }
+                    }
 
                 return isValid;
             }
@@ -349,8 +357,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             for (int index = 0; index < steps; ++index)
             {
                 direction = rotation * direction;
-                var ray = new Ray(position + direction + (Vector3.up * height), Vector3.down);
-                if (Physics.RaycastNonAlloc(ray, hitArray, height + forgiveness, LayerIndex.enemyBody.collisionMask) == 0)
+                var origin = position + direction + (Vector3.up * height);
+                if (Physics.RaycastNonAlloc(origin, Vector3.down, hitArray, height + forgiveness, LayerIndex.enemyBody.collisionMask) == 0)
                     return false;
             }
             return true;
@@ -365,63 +373,42 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             return FootprintFitsPosition(position, 10, 7f, 2);
         }
 
-        public void UpdateTriangleCollections(NavigationProbe[] probes = null)
+        public void UpdateTriangleCollections()
         {
             Profiler.BeginSample("Find walkable triangles");
-            if (probes == null)
-                probes = FindObjectsOfType<NavigationProbe>();
 
             Profiler.BeginSample("Collect MeshFilters");
-            meshFilters = probes.SelectMany(p =>
-            {
-                var hits = Physics.OverlapSphereNonAlloc(p.transform.position, p.distance, colliders, LayerIndex.world.mask);
-                var hitColliders = colliders.Take(hits);
-                var hitMeshFilters = hitColliders.SelectMany(collider => collider.GetComponents<MeshFilter>());
-                var included = hitMeshFilters.Where(mf => mf.GetComponentsInParent<ExcludeFromNavigation>().Length == 0);
-                return included;
-            }).Distinct().ToArray();
+            meshFilters = NavigationProbe.ActiveProbes.SelectMany(p => p.meshFilters).Distinct().ToArray();
             Profiler.EndSample();
 
             Profiler.BeginSample("Collect Vertices and Indices");
-            var vertices = new List<Vector3>(meshFilters.Select(mf => mf.sharedMesh.vertices.Length).Sum());
-            var indices = new List<int>(meshFilters.Select(mf => mf.sharedMesh.triangles.Length).Sum());
-            foreach (var meshFilter in meshFilters)
-            {
-                indices.AddRange(meshFilter.sharedMesh.triangles.Select(i => i + vertices.Count));
-                vertices.AddRange(meshFilter.sharedMesh.vertices.Select(v => meshFilter.transform.TransformPoint(v)));
-            }
+
+            var combines = meshFilters.Select(mf => new CombineInstance { mesh = mf.sharedMesh, transform = mf.transform.localToWorldMatrix }).ToArray();
+            var allMesh = new Mesh();
+            allMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            allMesh.CombineMeshes(combines);
+            var vertices = new List<Vector3>();
+            allMesh.GetVertices(vertices);
+            var indices = allMesh.GetIndices(0);
+
             Profiler.EndSample();
-            var colors = new Dictionary<int, Color>(vertices.Count);
 
 
             Profiler.BeginSample("Construct TriangleCollection");
-            TriangleCollection = new TriangleCollection(vertices, indices.ToArray());
+            TriangleCollection = new TriangleCollection(vertices, indices);
             Profiler.EndSample();
 
             var upwardTriangles = TriangleCollection.WithNormal(Vector3.up, marginFromUp);
             var upTrisWithLOS = upwardTriangles.Where(triangle =>
             {
                 var triVerts = TriangleCollection.Vertices(triangle);
-                foreach (var probe in probes)
+                foreach (var probe in NavigationProbe.ActiveProbes)
                 {
                     var seen = TestVertex(triVerts.a, probe.transform.position, probe.distance)
                             || TestVertex(triVerts.b, probe.transform.position, probe.distance)
                             || TestVertex(triVerts.c, probe.transform.position, probe.distance);
                     if (seen)
-                    {
-                        if (!colors.ContainsKey(triangle.IndexA)) colors[triangle.IndexA] = probe.navigationProbeColor;
-                        else
-                            colors[triangle.IndexA] = Color.Lerp(colors[triangle.IndexA], probe.navigationProbeColor, 0.5f);
-
-                        if (!colors.ContainsKey(triangle.IndexB)) colors[triangle.IndexB] = probe.navigationProbeColor;
-                        else
-                            colors[triangle.IndexB] = Color.Lerp(colors[triangle.IndexB], probe.navigationProbeColor, 0.5f);
-
-                        if (!colors.ContainsKey(triangle.IndexC)) colors[triangle.IndexC] = probe.navigationProbeColor;
-                        else
-                            colors[triangle.IndexC] = Color.Lerp(colors[triangle.IndexC], probe.navigationProbeColor, 0.5f);
                         return true;
-                    }
                 }
                 return false;
             });
@@ -432,8 +419,6 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
 
             Profiler.BeginSample("Create Preview Mesh");
             mesh = TriangleCollection.ToMesh();
-            List<Color> inColors = colors.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
-            mesh.SetColors(inColors);
             mesh.name = $"(Vector3.Dot(up, faceNormal) > 1-{marginFromUp})";
             Profiler.EndSample();
 
