@@ -5,7 +5,6 @@ using RoR2;
 using RoR2.Navigation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,9 +17,6 @@ namespace PassivePicasso.RainOfStages.Designer
     {
         private const string RainOfStagesSceneInfoEditorSettings = nameof(RainOfStagesSceneInfoEditorSettings);
         static FieldInfo nodesField = typeof(NodeGraph).GetField("nodes", BindingFlags.NonPublic | BindingFlags.Instance);
-        static FieldInfo linksField = typeof(NodeGraph).GetField("links", BindingFlags.NonPublic | BindingFlags.Instance);
-        enum LinkMeshType { line, arrow }
-
         private static readonly Vector3[] cubeVertices = new[]
         {
                     new Vector3 (0, 0, 0),
@@ -80,15 +76,11 @@ namespace PassivePicasso.RainOfStages.Designer
         private static NodeGraph airNodeGraph;
         private static NodeGraph.Node[] airNodes;
         private static NodeGraph.Node[] groundNodes;
-        private static NodeGraph.Link[] airLinks;
-        private static NodeGraph.Link[] groundLinks;
 
         private static Mesh airLinkLineMesh;
-        private static Mesh airLinkArrowMesh;
         private static Mesh airNodeMesh;
 
         private static Mesh groundLinkLineMesh;
-        private static Mesh groundLinkArrowMesh;
         private static Mesh groundNodeMesh;
 
         private static Mesh teleporterOkMesh;
@@ -132,6 +124,7 @@ namespace PassivePicasso.RainOfStages.Designer
 
             LoadDebugValues();
             OnBuilt();
+            GenerateGUIContent();
             Camera.onPreCull -= Draw;
             Camera.onPreCull += Draw;
             EditorApplication.update -= UpdateMeshCheck;
@@ -140,7 +133,6 @@ namespace PassivePicasso.RainOfStages.Designer
             GraphBuilder.OnBuilt += OnBuilt;
             SceneView.onSceneGUIDelegate -= ExternalSceneGui;
             SceneView.onSceneGUIDelegate += ExternalSceneGui;
-            GenerateGUIContent();
         }
 
         static void GenerateGUIContent()
@@ -164,71 +156,66 @@ namespace PassivePicasso.RainOfStages.Designer
 
         private static void ExternalSceneGui(SceneView sceneView)
         {
-            var probe = GameObject.FindObjectOfType<NavigationProbe>();
-            var groundGraphBuilders = GameObject.FindObjectOfType<GroundGraphBuilder>();
-            var airGraphBuilders = GameObject.FindObjectOfType<AirGraphBuilder>();
-            if (probe || groundGraphBuilders || airGraphBuilders)
+            var height = CalculateHeight();
+            var width = CalculateWidth();
+            Rect screenRect = new Rect(4, 4, width, height);
+
+
+            Handles.BeginGUI();
+            GUILayout.BeginArea(screenRect, EditorStyles.helpBox);
+            EditorGUI.BeginChangeCheck();
+            try
             {
-                var height = CalculateHeight();
-                var width = CalculateWidth();
-                Rect screenRect = new Rect(4, 4, width, height);
+                float slh = EditorGUIUtility.singleLineHeight;
+                var buttonWidth = GUILayout.Width(slh);
+                var buttonHeight = GUILayout.Height(slh);
+                if (DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent("X", "Close NodeGraph Tools"), buttonWidth, buttonHeight))
+                    DebugSettings.ShowGraphTools = false;
+                if (!DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent(">", "Open NodeGraph Tools"), buttonWidth, buttonHeight))
+                    DebugSettings.ShowGraphTools = true;
 
+                if (!DebugSettings.ShowGraphTools) return;
 
-                Handles.BeginGUI();
-                GUILayout.BeginArea(screenRect, EditorStyles.helpBox);
-                EditorGUI.BeginChangeCheck();
-                try
+                GUI.Label(new Rect(24, 3, width - 36, slh), "NodeGraph Tools");
+
+                if (!DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), ">"))
+                    DebugSettings.ShowSettings = true;
+                if (DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), "<"))
+                    DebugSettings.ShowSettings = false;
+
+                if (DebugSettings.ShowSettings) GUILayout.BeginHorizontal();
+
+                if (GUILayout.Button(new GUIContent("Build Ground Graph")))
                 {
-                    float slh = EditorGUIUtility.singleLineHeight;
-                    var buttonWidth = GUILayout.Width(slh);
-                    var buttonHeight = GUILayout.Height(slh);
-                    if (DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent("X", "Close NodeGraph Tools"), buttonWidth, buttonHeight))
-                        DebugSettings.ShowGraphTools = false;
-                    if (!DebugSettings.ShowGraphTools && GUILayout.Button(new GUIContent(">", "Open NodeGraph Tools"), buttonWidth, buttonHeight))
-                        DebugSettings.ShowGraphTools = true;
-
-                    if (!DebugSettings.ShowGraphTools) return;
-
-                    GUI.Label(new Rect(24, 3, width - 36, slh), "NodeGraph Tools");
-
-                    if (!DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), ">"))
-                        DebugSettings.ShowSettings = true;
-                    if (DebugSettings.ShowSettings && GUI.Button(new Rect(width - slh - 6, 3, slh + 2, slh), "<"))
-                        DebugSettings.ShowSettings = false;
-
-                    if (DebugSettings.ShowSettings) GUILayout.BeginHorizontal();
-
-                    if (GUILayout.Button(new GUIContent("Build Ground Graph")))
-                    {
-                        foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
-                            ggb.Build();
-                    }
-                    if (GUILayout.Button(new GUIContent("Build Air Graph")))
-                    {
-                        foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
-                            agb.Build();
-                    }
-                    if (DebugSettings.ShowSettings) GUILayout.EndHorizontal();
-
-                    if (DebugSettings.ShowSettings)
-                        using (var scroll = new GUILayout.ScrollViewScope(scrollPosition))
-                        {
-                            OnDebugGUI();
-                            scrollPosition = scroll.scrollPosition;
-                        }
-
+                    foreach (var ggb in GameObject.FindObjectsOfType<GroundGraphBuilder>())
+                        ggb.Build();
                 }
-                finally
+                if (GUILayout.Button(new GUIContent("Build Air Graph")))
                 {
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        SaveDebugValues();
-                    }
-                    GUILayout.EndArea();
-                    Handles.EndGUI();
+                    foreach (var agb in GameObject.FindObjectsOfType<AirGraphBuilder>())
+                        agb.Build();
                 }
+                if (DebugSettings.ShowSettings) GUILayout.EndHorizontal();
+
+                if (DebugSettings.ShowSettings)
+                    using (var scroll = new GUILayout.ScrollViewScope(scrollPosition))
+                    {
+                        OnDebugGUI();
+                        scrollPosition = scroll.scrollPosition;
+                    }
+
+            }
+            finally
+            {
+                if (EditorGUI.EndChangeCheck())
+                {
+                    SaveDebugValues();
+                }
+                GUILayout.EndArea();
+                Handles.EndGUI();
             }
         }
+
         private static void OnBuilt()
         {
             regenerateLineMesh = true;
@@ -318,17 +305,12 @@ namespace PassivePicasso.RainOfStages.Designer
                 var serializedObject = new SerializedObject(sceneInfo);
                 groundNodeGraph = (NodeGraph)serializedObject.FindProperty("groundNodesAsset").objectReferenceValue;
                 if (groundNodeGraph)
-                {
                     groundNodes = nodesField.GetValue(groundNodeGraph) as NodeGraph.Node[];
-                    groundLinks = linksField.GetValue(groundNodeGraph) as NodeGraph.Link[];
-                }
 
                 airNodeGraph = (NodeGraph)serializedObject.FindProperty("airNodesAsset").objectReferenceValue;
                 if (airNodeGraph)
-                {
                     airNodes = nodesField.GetValue(airNodeGraph) as NodeGraph.Node[];
-                    airLinks = linksField.GetValue(airNodeGraph) as NodeGraph.Link[];
-                }
+
                 RegenerateMeshes();
 
                 SceneView.lastActiveSceneView?.Repaint();
@@ -343,7 +325,7 @@ namespace PassivePicasso.RainOfStages.Designer
             regenerateNodeMesh |= repaint |= CheckedField(() => DebugSettings.DebugFlags = (NodeFlags)EditorGUILayout.EnumFlagsField(debugFlagsContent, DebugSettings.DebugFlags));
 
             regenerateNodeMesh |= CheckedField(() => DebugSettings.DebugNodes = EditorGUILayout.Toggle(debugNodesContent, DebugSettings.DebugNodes));
-            regenerateLineMesh|= CheckedField(() => DebugSettings.DebugLinks = EditorGUILayout.Toggle(debugLinksContent, DebugSettings.DebugLinks));
+            regenerateLineMesh |= CheckedField(() => DebugSettings.DebugLinks = EditorGUILayout.Toggle(debugLinksContent, DebugSettings.DebugLinks));
             repaint |= CheckedField(() => DebugSettings.ProbeLineOfSightOverlay = EditorGUILayout.Toggle(probeLineOfSightOverlayContent, DebugSettings.ProbeLineOfSightOverlay));
 
             repaint |= CheckedField(() => DebugSettings.VerticalOffset = EditorGUILayout.Slider(verticalOffsetContent, DebugSettings.VerticalOffset, 0, 20));
@@ -396,9 +378,7 @@ namespace PassivePicasso.RainOfStages.Designer
             {
                 if (regenerateLineMesh)
                     groundLinkLineMesh = groundNodeGraph.GenerateLinkDebugMesh((HullMask)DebugSettings.HullMask);
-                //GenerateLinkMesh(LinkMeshType.line, groundNodes, groundLinks, VerticalOffset);
-                if (regenerateArrowMesh)
-                    groundLinkArrowMesh = GenerateLinkMesh(LinkMeshType.arrow, groundNodes, groundLinks);
+
                 if (regenerateNodeMesh)
                 {
                     groundNodeMesh = GenerateNodeMesh(groundNodes, nodeCorrection);
@@ -414,8 +394,6 @@ namespace PassivePicasso.RainOfStages.Designer
             {
                 if (regenerateLineMesh)
                     airLinkLineMesh = airNodeGraph.GenerateLinkDebugMesh((HullMask)DebugSettings.HullMask);
-                if (regenerateArrowMesh)
-                    airLinkArrowMesh = GenerateLinkMesh(LinkMeshType.arrow, airNodes, airLinks);
                 if (regenerateNodeMesh)
                     airNodeMesh = GenerateNodeMesh(airNodes, nodeCorrection);
             }
@@ -492,89 +470,6 @@ namespace PassivePicasso.RainOfStages.Designer
             }
 
             return GetMesh(vertices, indices, colors, MeshTopology.Triangles);
-        }
-        private static Mesh GenerateLinkMesh(LinkMeshType linkMeshType, NodeGraph.Node[] nodes, NodeGraph.Link[] links)
-        {
-            if (linkMeshType != LinkMeshType.arrow && linkMeshType != LinkMeshType.line)
-                throw new System.ArgumentException(nameof(linkMeshType));
-
-            var vertices = new List<Vector3>();
-            var edges = new List<int>();
-            var triangles = new List<int>();
-            var colors = new List<Color>();
-            void Add(Vector3 a, Color vc, List<int> subMeshIndices)
-            {
-                subMeshIndices.Add(vertices.Count);
-                vertices.Add(a);
-                colors.Add(vc);
-            }
-            void AddLine(Vector3 a, Vector3 b, Color vc)
-            {
-                Add(a, vc, edges);
-                Add(b, vc, edges);
-            }
-            void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Color vc)
-            {
-                Add(a, vc, triangles);
-                Add(b, vc, triangles);
-                Add(c, vc, triangles);
-            }
-
-            foreach (var node in nodes)
-            {
-                var linkIndex = node.linkListIndex;
-                for (int i = linkIndex.index; i < linkIndex.index + linkIndex.size; i++)
-                {
-                    var link = links[i];
-
-                    var mask = ((HullMask)link.hullMask).GetMaxSetFlagValue();
-                    var color = colormap[(HullMask)mask];
-                    NodeGraph.Node nodeA = nodes[link.nodeIndexA.nodeIndex];
-                    NodeGraph.Node nodeB = nodes[link.nodeIndexB.nodeIndex];
-                    Vector3 nodeAPos = nodeA.position;
-                    Vector3 nodeBPos = nodeB.position;
-                    var displacement = nodeBPos - nodeAPos;
-                    var linkDirection = displacement.normalized;
-
-                    const float arrowHeight = 1f;
-                    var nodeAModA = nodeAPos + (linkDirection * 1) + Vector3.up * arrowHeight;
-                    var nodeAModB = nodeAPos + (linkDirection * 2);
-                    switch (linkMeshType)
-                    {
-                        case LinkMeshType.line:
-                            AddLine(new Vector3(nodeAPos.x, nodeAPos.y - 5, nodeAPos.z),
-                                    new Vector3(nodeAPos.x, nodeAPos.y, nodeAPos.z), color);
-
-                            AddLine(new Vector3(nodeAPos.x, nodeAPos.y, nodeAPos.z),
-                                    new Vector3(nodeBPos.x, nodeBPos.y, nodeBPos.z), color);
-                            break;
-                        case LinkMeshType.arrow:
-                            float halfArrowWidth = DebugSettings.ArrowSize / 2;
-
-                            var offset = DebugSettings.PercentageOffset ? Mathf.Clamp(DebugSettings.ArrowOffset, 0, 1) * displacement.magnitude : DebugSettings.ArrowOffset;
-                            nodeAModA = nodeAPos + (linkDirection * offset);
-                            nodeAModB = nodeAPos + (linkDirection * (offset + DebugSettings.ArrowSize));
-
-                            var linkCross = Vector3.Cross(linkDirection, Vector3.up).normalized;
-
-                            var a = nodeAModA + (linkCross * halfArrowWidth);
-                            var b = nodeAModA - (linkCross * halfArrowWidth);
-
-                            AddTriangle(new Vector3(a.x, a.y, a.z),
-                                        new Vector3(b.x, b.y, b.z),
-                                        new Vector3(nodeAModB.x, nodeAModB.y, nodeAModB.z), color);
-                            break;
-                    }
-                }
-            }
-
-            if (linkMeshType == LinkMeshType.line)
-                return GetMesh(vertices, edges, colors, MeshTopology.Lines);
-            else
-            if (linkMeshType == LinkMeshType.arrow)
-                return GetMesh(vertices, triangles, colors, MeshTopology.Triangles);
-
-            return null;
         }
         private static Mesh GetMesh(List<Vector3> linkEnds, List<int> linkEdges, List<Color> colors, MeshTopology topology)
         {
