@@ -10,6 +10,7 @@ using RoR2;
 using RoR2.ContentManagement;
 using RoR2.Navigation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -58,6 +59,7 @@ namespace PassivePicasso.RainOfStages.Plugin
         public string identifier => Constants.GuidName;
 
         public static string FastLoadRun { get; private set; } = null;
+        private string DebugSurvivor = "CommandoBody";
 
         public bool debugDraw = false;
         public HullClassification debugHull = HullClassification.Human;
@@ -105,6 +107,9 @@ namespace PassivePicasso.RainOfStages.Plugin
                         sessionCheatsEnabledProp.SetValue(null, true);
                         NonProxyHooks.InitializeDebugging();
                         break;
+                    case var _ when arg.StartsWith("--Survivor=", StringComparison.OrdinalIgnoreCase):
+                        DebugSurvivor = arg.Substring("--Survivor=".Length);
+                        break;
                 }
 
             if (loadGameMode)
@@ -117,27 +122,41 @@ namespace PassivePicasso.RainOfStages.Plugin
 
         private void LoadRun(Scene arg0, Scene arg1)
         {
-            if (arg1.name == "title")
+            switch (arg1.name)
             {
-                SceneManager.activeSceneChanged -= LoadRun;
-                Execute($"transition_command \"gamemode {FastLoadRun}; host 0;\"");
+                case "title":
+                    Execute($"transition_command \"gamemode {FastLoadRun}; host 0;\"");
+                    break;
+                case "lobby":
+                    StartCoroutine(StartRun());
+                    break;
             }
+        }
+
+        private IEnumerator StartRun()
+        {
+            yield return new WaitUntil(() => PreGameController.instance != null);
+
+            foreach (NetworkUser onlyLocalPlayers in NetworkUser.readOnlyLocalPlayersList)
+            {
+                if (onlyLocalPlayers)
+                    onlyLocalPlayers.CallCmdSetBodyPreference(BodyCatalog.FindBodyIndex(DebugSurvivor));
+                else
+                    Debug.Log((object)"Null network user in readonly local player list!!");
+            }
+            Execute($"pregame_start_run");
         }
 
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.F8))
             {
-                HullClassification next = HullClassification.Count;
-                if (debugHull == HullClassification.Count) next = HullClassification.Human;
-                else
-                {
-                    next = (HullClassification)(((int)debugHull) + 1);
-                    Execute($"debug_scene_draw_nodegraph 0 {(int)MapNodeGroup.GraphType.Ground} {(int)debugHull}");
-                }
+                HullClassification next = (HullClassification)(((int)debugHull) + 1);
+                Logger.LogDebug($"{MapNodeGroup.GraphType.Ground} {debugHull}");
+                if (debugHull == HullClassification.Count)
+                    next = HullClassification.Human;
 
-                if (next != HullClassification.Count)
-                    Execute($"debug_scene_draw_nodegraph 1 {(int)MapNodeGroup.GraphType.Ground} {(int)next}");
+                Execute($"debug_scene_draw_nodegraph 1 {(int)MapNodeGroup.GraphType.Ground} {(int)next}");
 
                 debugHull = next;
             }
