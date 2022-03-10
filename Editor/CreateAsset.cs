@@ -103,7 +103,7 @@ namespace PassivePicasso.RainOfStages.Designer
 #pragma warning disable CS0618 // Type or member is obsolete
             var director = new GameObject("Director", typeof(NetworkIdentity), typeof(DirectorCore), typeof(SceneDirector), typeof(CombatDirector), typeof(CombatDirector));
 #pragma warning restore CS0618 // Type or member is obsolete
-            var globalEventManager = new GameObject("GlobalEventManager", typeof(Proxy.GlobalEventManager));
+            var globalEventManager = new GameObject("GlobalEventManager", typeof(GlobalEventManager));
 
             var graphBuilder = new GameObject("NodeGraphBuilder", typeof(AirGraphBuilder), typeof(GroundGraphBuilder));
             var defaultProbe = new GameObject("Probe (1)", typeof(NavigationProbe));
