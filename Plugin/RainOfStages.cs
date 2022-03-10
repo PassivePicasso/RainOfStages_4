@@ -267,7 +267,7 @@ namespace PassivePicasso.RainOfStages.Plugin
             }
         }
 
-        public System.Collections.IEnumerator LoadStaticContentAsync(LoadStaticContentAsyncArgs args)
+        public IEnumerator LoadStaticContentAsync(LoadStaticContentAsyncArgs args)
         {
             float progress = 0f;
             progress = 0.1f;
@@ -296,7 +296,7 @@ namespace PassivePicasso.RainOfStages.Plugin
             yield break;
         }
 
-        public System.Collections.IEnumerator GenerateContentPackAsync(GetContentPackAsyncArgs args)
+        public IEnumerator GenerateContentPackAsync(GetContentPackAsyncArgs args)
         {
             args.output.sceneDefs.Add(RainOfStages.Instance.SceneDefinitions.ToArray());
 
@@ -307,7 +307,7 @@ namespace PassivePicasso.RainOfStages.Plugin
             yield break;
         }
 
-        public System.Collections.IEnumerator FinalizeAsync(FinalizeAsyncArgs args)
+        public IEnumerator FinalizeAsync(FinalizeAsyncArgs args)
         {
             ContentManager.onContentPacksAssigned += WeaveDefinitions;
             args.ReportProgress(1f);
