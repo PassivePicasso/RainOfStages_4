@@ -176,7 +176,6 @@ namespace PassivePicasso.RainOfStages.Plugin
         {
             HookAttribute.Logger = RoSLog;
             try { HookAttribute.ApplyHooks<NonProxyHooks>(); } catch (Exception e) { RoSLog.LogError(e); }
-            try { HookAttribute.ApplyHooks<Proxy.GlobalEventManager>(); } catch (Exception e) { RoSLog.LogError(e); }
         }
 
         private void Initialize()
