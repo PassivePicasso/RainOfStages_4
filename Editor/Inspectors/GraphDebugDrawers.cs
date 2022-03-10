@@ -130,8 +130,8 @@ namespace PassivePicasso.RainOfStages.Designer
             EditorApplication.update += UpdateMeshCheck;
             GraphBuilder.OnBuilt -= OnBuilt;
             GraphBuilder.OnBuilt += OnBuilt;
-            SceneView.onSceneGUIDelegate -= ExternalSceneGui;
-            SceneView.onSceneGUIDelegate += ExternalSceneGui;
+            SceneView.duringSceneGui -= ExternalSceneGui;
+            SceneView.duringSceneGui += ExternalSceneGui;
         }
 
         static void GenerateGUIContent()
