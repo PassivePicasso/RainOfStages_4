@@ -47,6 +47,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -58,6 +59,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -88,9 +90,9 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 3
+  serializedVersion: 4
   m_Convex: 0
-  m_CookingOptions: 14
+  m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 98e888ea529aecd479888a44ea2d0c03, type: 2}
 --- !u!1 &5346948176375577147
 GameObject:
@@ -101,7 +103,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5346948176375577150}
-  - component: {fileID: 5346948176375577144}
+  - component: {fileID: 8184683981033747059}
   m_Layer: 0
   m_Name: BbRuinPillar1
   m_TagString: Untagged
@@ -124,7 +126,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 90}
---- !u!114 &5346948176375577144
+--- !u!114 &8184683981033747059
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -133,8 +135,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 5346948176375577147}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e91939622c11be04a8b4a63ec6d990e6, type: 3}
+  m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RootPrefabPath: prefabs/stagedisplay/BlackbeachDioramaDisplay
-  PrefabPath: Ruins/BbRuinPillar1_LOD0 (1)
+  replaceSelf: 0
+  Address: 

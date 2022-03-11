@@ -55,6 +55,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -66,6 +67,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -101,7 +103,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4242427614902970031}
-  - component: {fileID: 4242427614902970030}
+  - component: {fileID: -8938396324663894262}
   m_Layer: 12
   m_Name: bbRuinMarker
   m_TagString: Untagged
@@ -124,7 +126,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4242427614902970030
+--- !u!114 &-8938396324663894262
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -133,8 +135,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 4242427614902970017}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e91939622c11be04a8b4a63ec6d990e6, type: 3}
+  m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RootPrefabPath: prefabs/stagedisplay/BlackbeachDioramaDisplay
-  PrefabPath: Ruins/BbRuinMarker_LOD0
+  replaceSelf: 0
+  Address: 
