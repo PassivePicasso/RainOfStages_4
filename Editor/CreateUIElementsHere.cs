@@ -2,17 +2,6 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-#if UNITY_2019 || UNITY_2020
-using UnityEditor.UIElements;
-using UnityEngine.UIElements;
-using UnityEngine.UIElements.StyleEnums;
-using Button = UnityEngine.UIElements.Button;
-#else
-using UnityEditor.Experimental.UIElements;
-using UnityEngine.Experimental.UIElements;
-using UnityEngine.Experimental.UIElements.StyleEnums;
-using Button = UnityEngine.Experimental.UIElements.Button;
-#endif
 
 namespace PassivePicasso.RainOfStages.Designer
 {
