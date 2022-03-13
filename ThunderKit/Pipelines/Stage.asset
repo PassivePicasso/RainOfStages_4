@@ -18,47 +18,8 @@ MonoBehaviour:
   - {fileID: 114798021761818440}
   - {fileID: 114561077959843886}
   - {fileID: 114888345249068578}
-  - {fileID: 114442927148342334}
-  - {fileID: 114366308522735304}
-  - {fileID: 114522234837775978}
-  manifest: {fileID: 11400000, guid: 3788d3942ba76e342c728f0149bba8ed, type: 2}
   QuickAccess: 0
---- !u!114 &114366308522735304
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3570c76eb7a5c3c45942d9295a150917, type: 3}
-  m_Name: StageManifestFiles
-  m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
-  Active: 1
---- !u!114 &114442927148342334
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 152e59d2cada7f14880e2a1d4e3ac753, type: 3}
-  m_Name: ConvertReferences
-  m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
-  Active: 1
-  conversion: 0
-  UnityObjects:
-  - {fileID: 102900000, guid: 3df938db3d004614a9225bf60a982ea2, type: 3}
-  - {fileID: 102900000, guid: fed4b3d1eee58a24f8cbb8dcb399ff93, type: 3}
+  manifest: {fileID: 11400000, guid: 3788d3942ba76e342c728f0149bba8ed, type: 2}
 --- !u!114 &114520525572577756
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -71,35 +32,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 924ee63e6c016f14d8a1560b288f15a3, type: 3}
   m_Name: StageAssetBundles
   m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
   Active: 1
   AssetBundleBuildOptions: 256
   buildTarget: 5
   recurseDirectories: 1
   simulate: 0
   BundleArtifactPath: <AssetBundleStaging>
---- !u!114 &114522234837775978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 152e59d2cada7f14880e2a1d4e3ac753, type: 3}
-  m_Name: ConvertReferences
-  m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
-  Active: 1
-  conversion: 1
-  UnityObjects:
-  - {fileID: 102900000, guid: 3df938db3d004614a9225bf60a982ea2, type: 3}
-  - {fileID: 102900000, guid: fed4b3d1eee58a24f8cbb8dcb399ff93, type: 3}
 --- !u!114 &114561077959843886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112,9 +50,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b4f4581088b47744a114c282abc085d, type: 3}
   m_Name: StageDependencies
   m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
   Active: 0
   StagingPath: <StagingRoot>
   ExcludedManifests: []
@@ -130,9 +65,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5b20fac9c71fd64183cb7a8f359d73a, type: 3}
   m_Name: StageAssemblies
   m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
   Active: 1
   stageDebugDatabases: 1
   assemblyArtifactPath: <AssemblyStaging>
@@ -150,9 +82,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc52389347ae9634bbb7e74eba886518, type: 3}
   m_Name: StageThunderstoreManifest
   m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
   Active: 1
 --- !u!114 &114910196193490642
 MonoBehaviour:
@@ -166,9 +95,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87d65cc226c348d45aa1c6dddf3600a6, type: 3}
   m_Name: Delete
   m_EditorClassIdentifier: 
-  Errored: 0
-  ErrorMessage: 
-  ErrorStacktrace: 
   Active: 1
   PerManifest: 1
   ExcludedManifests: []
