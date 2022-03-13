@@ -21,36 +21,36 @@ namespace PassivePicasso.RainOfStages.Designer
     public class CreateAsset : ScriptableObject
     {
 
-        [InitializeOnLoadMethod]
-        public static void InitializeProject()
-        {
-            EditorApplication.update += InstallEditorPack;
-        }
+        //[InitializeOnLoadMethod]
+        //public static void InitializeProject()
+        //{
+        //    EditorApplication.update += InstallEditorPack;
+        //}
 
-        private static void InstallEditorPack()
-        {
-            EditorApplication.update -= InstallEditorPack;
-            var graphicsSettingsSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "GraphicsSettings");
-            var graphicsSettingsDest = PathHelper.ProjectPath("ProjectSettings", "GraphicsSettings.asset");
-            FileUtil.ReplaceFile(graphicsSettingsSrc, graphicsSettingsDest);
-            var graphicsSettingsDestInfo = new FileInfo(graphicsSettingsDest);
-            graphicsSettingsDestInfo.LastAccessTime = graphicsSettingsDestInfo.LastWriteTime = System.DateTime.Now;
-            graphicsSettingsDestInfo.Refresh();
+        //private static void InstallEditorPack()
+        //{
+        //    EditorApplication.update -= InstallEditorPack;
+        //    var graphicsSettingsSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "GraphicsSettings");
+        //    var graphicsSettingsDest = PathHelper.ProjectPath("ProjectSettings", "GraphicsSettings.asset");
+        //    FileUtil.ReplaceFile(graphicsSettingsSrc, graphicsSettingsDest);
+        //    var graphicsSettingsDestInfo = new FileInfo(graphicsSettingsDest);
+        //    graphicsSettingsDestInfo.LastAccessTime = graphicsSettingsDestInfo.LastWriteTime = System.DateTime.Now;
+        //    graphicsSettingsDestInfo.Refresh();
 
-            var physicsManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "DynamicsManager");
-            var physicsManagerDest = PathHelper.ProjectPath("ProjectSettings", "DynamicsManager.asset");
-            FileUtil.ReplaceFile(physicsManagerSrc, physicsManagerDest);
-            var physicsManagerDestInfo = new FileInfo(physicsManagerDest);
-            physicsManagerDestInfo.LastAccessTime = physicsManagerDestInfo.LastWriteTime = System.DateTime.Now;
-            physicsManagerDestInfo.Refresh();
+        //    var physicsManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "DynamicsManager");
+        //    var physicsManagerDest = PathHelper.ProjectPath("ProjectSettings", "DynamicsManager.asset");
+        //    FileUtil.ReplaceFile(physicsManagerSrc, physicsManagerDest);
+        //    var physicsManagerDestInfo = new FileInfo(physicsManagerDest);
+        //    physicsManagerDestInfo.LastAccessTime = physicsManagerDestInfo.LastWriteTime = System.DateTime.Now;
+        //    physicsManagerDestInfo.Refresh();
 
-            var tagManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "TagManager");
-            var tagManagerDest = PathHelper.ProjectPath("ProjectSettings", "TagManager.asset");
-            FileUtil.ReplaceFile(tagManagerSrc, tagManagerDest);
-            var tagManagerDestInfo = new FileInfo(tagManagerDest);
-            tagManagerDestInfo.LastAccessTime = tagManagerDestInfo.LastWriteTime = System.DateTime.Now;
-            tagManagerDestInfo.Refresh();
-        }
+        //    var tagManagerSrc = PathHelper.RoSPath("RoSShared", "ProjectSettings", "TagManager");
+        //    var tagManagerDest = PathHelper.ProjectPath("ProjectSettings", "TagManager.asset");
+        //    FileUtil.ReplaceFile(tagManagerSrc, tagManagerDest);
+        //    var tagManagerDestInfo = new FileInfo(tagManagerDest);
+        //    tagManagerDestInfo.LastAccessTime = tagManagerDestInfo.LastWriteTime = System.DateTime.Now;
+        //    tagManagerDestInfo.Refresh();
+        //}
 
         #region TagManager
         #endregion
