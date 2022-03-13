@@ -38,10 +38,11 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4053018199833485673}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  previewTexture: {fileID: 0}
   replaceSelf: 0
   Address: RoR2/Base/blackbeach/spmBbDryBush.spm

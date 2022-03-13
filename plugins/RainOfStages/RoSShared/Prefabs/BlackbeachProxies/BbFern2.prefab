@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5905522134708740797}
   - component: {fileID: 6497220822555289960}
   m_Layer: 12
-  m_Name: spmBbFern1Old 1
+  m_Name: BbFern2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43,5 +43,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  previewTexture: {fileID: 0}
   replaceSelf: 0
   Address: RoR2/Base/blackbeach/spmBbFern2.spm

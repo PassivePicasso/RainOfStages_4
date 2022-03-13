@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4518332099881685253
+--- !u!1 &3639654571959687524
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,36 +8,36 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 535660305258245573}
-  - component: {fileID: 4296850449092066751}
-  m_Layer: 0
-  m_Name: BbConifer
+  - component: {fileID: 5905522134708740797}
+  - component: {fileID: 6497220822555289960}
+  m_Layer: 12
+  m_Name: BbBigFern1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &535660305258245573
+--- !u!4 &5905522134708740797
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4518332099881685253}
-  m_LocalRotation: {x: 0.003767162, y: 0.31091046, z: -0.011515106, w: 0.950362}
-  m_LocalPosition: {x: 69.87, y: 15.16, z: 95.24}
+  m_GameObject: {fileID: 3639654571959687524}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 687.3812, y: -8.645145, z: 279.2796}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0.82100004, y: 36.223003, z: -1.12}
---- !u!114 &4296850449092066751
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6497220822555289960
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4518332099881685253}
+  m_GameObject: {fileID: 3639654571959687524}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
@@ -45,4 +45,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewTexture: {fileID: 0}
   replaceSelf: 0
-  Address: RoR2/Base/blackbeach/spmBbConif.spm
+  Address: RoR2/Base/blackbeach/spmBbBigFern1.spm
