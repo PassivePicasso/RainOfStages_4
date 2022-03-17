@@ -43,6 +43,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9179511125c6f73468334de11b7eac07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  previewTexture: {fileID: 0}
-  replaceSelf: 0
   Address: RoR2/Base/blackbeach/spmBbFern3.spm
+  replaceSelf: 0
