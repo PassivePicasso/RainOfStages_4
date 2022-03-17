@@ -9,7 +9,8 @@
         "ThunderKit.Common",
         "ThunderKit.Core",
         "Unity.ScriptableBuildPipeline",
-        "Unity.ScriptableBuildPipeline.Editor"
+        "Unity.ScriptableBuildPipeline.Editor",
+        "com.unity.multiplayer-hlapi.Runtime"
     ],
     "includePlatforms": [
         "Editor"
