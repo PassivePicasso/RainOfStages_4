@@ -9,9 +9,9 @@ namespace PassivePicasso.RainOfStages.Designer
         public override void OnInspectorGUI()
         {
             var so = new SerializedObject(target);
-            GUILayout.Label($"Nodes: {so.FindProperty("nodes").arraySize}");
-            GUILayout.Label($"Links: {so.FindProperty("links").arraySize}");
-            GUILayout.Label($"Gates: {so.FindProperty("gateNames").arraySize}");
+            GUILayout.Label($"Nodes: {so.FindProperty("nodes")?.arraySize}");
+            GUILayout.Label($"Links: {so.FindProperty("links")?.arraySize}");
+            GUILayout.Label($"Gates: {so.FindProperty("gateNames")?.arraySize}");
         }
     }
 }
