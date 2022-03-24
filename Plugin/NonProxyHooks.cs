@@ -29,7 +29,7 @@ namespace PassivePicasso.RainOfStages.Hooks
                 Logger.LogDebug($"Found: {weeklyButton.name}");
 
                 var juicedPanel = weeklyButton.transform.parent;
-                string[] skip = new[] { "Classic", "ClassicRun" };
+                string[] skip = new[] { "Classic", "ClassicRun", "InfiniteTowerRun" };
                 var gameModes = RainOfStages.Instance.GameModes.Where(gm => !skip.Contains(gm.name));
                 foreach (var gameMode in gameModes)
                 {

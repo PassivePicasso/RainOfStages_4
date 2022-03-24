@@ -51,7 +51,7 @@ namespace PassivePicasso.RainOfStages.Plugin
         public AssetBundle RoSShared { get; private set; }
 
         private List<GameObject> gameModes = new List<GameObject>();
-        private List<string> gameModeNames = new List<string> { "ClassicRun" };
+        private List<string> gameModeNames = new List<string> { "ClassicRun", "InfiniteTowerRun" };
         private List<SceneDef> sceneDefinitions = new List<SceneDef>();
 
         public ManualLogSource RoSLog => base.Logger;
