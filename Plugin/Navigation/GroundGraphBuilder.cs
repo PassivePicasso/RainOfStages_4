@@ -120,8 +120,8 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             position = SurfacePosition(position);
 
             Profiler.BeginSample("Line of Sight to any probe");
-            int probeIndex = 0;
-            for (; probeIndex < NavigationProbe.ActiveProbes.Count; probeIndex++)
+            var failed = true;
+            for (int probeIndex = 0; probeIndex < NavigationProbe.ActiveProbes.Count; probeIndex++)
             {
                 var probe = NavigationProbe.ActiveProbes[probeIndex];
                 var probePosition = probe.transform.position;
@@ -131,11 +131,12 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
                     if (Physics.RaycastNonAlloc(position, direction, hitArray, distanceToProbe) == 0)
                         if (Physics.RaycastNonAlloc(probePosition, -direction, hitArray, distanceToProbe) == 0)
                         {
+                            failed = false;
                             break;
                         }
             }
             Profiler.EndSample();
-            if (probeIndex == NavigationProbe.ActiveProbes.Count - 1)
+            if (failed)
                 return;
 
             Profiler.BeginSample("Evaluate position fit");
@@ -378,7 +379,9 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             Profiler.BeginSample("Find walkable triangles");
 
             Profiler.BeginSample("Collect MeshFilters");
-            meshFilters = NavigationProbe.ActiveProbes.SelectMany(p => p.meshFilters).Distinct().ToArray();
+            var probes = NavigationProbe.ActiveProbes;
+            var filters = probes.Where(p => p.meshFilters != null).SelectMany(p => p.meshFilters).ToArray(); ;
+            meshFilters = filters.Distinct().ToArray();
             Profiler.EndSample();
 
             Profiler.BeginSample("Collect Vertices and Indices");
@@ -421,7 +424,7 @@ namespace PassivePicasso.RainOfStages.Plugin.Navigation
             mesh = TriangleCollection.ToMesh();
             mesh.name = $"(Vector3.Dot(up, faceNormal) > 1-{marginFromUp})";
             Profiler.EndSample();
-
+            DestroyImmediate(allMesh);
             Profiler.EndSample();
         }
 
