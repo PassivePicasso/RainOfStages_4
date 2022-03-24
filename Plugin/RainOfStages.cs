@@ -105,7 +105,6 @@ namespace PassivePicasso.RainOfStages.Plugin
                         cheatBackValueField.SetValue(RoR2.Console.CheatsConVar.instance, true);
                         var sessionCheatsEnabledProp = typeof(RoR2.Console).GetProperty(nameof(RoR2.Console.sessionCheatsEnabled), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
                         sessionCheatsEnabledProp.SetValue(null, true);
-                        NonProxyHooks.InitializeDebugging();
                         break;
                     case var _ when arg.StartsWith("--Survivor=", StringComparison.OrdinalIgnoreCase):
                         DebugSurvivor = arg.Substring("--Survivor=".Length);
