@@ -1,26 +1,40 @@
-﻿using UnityEngine;
+﻿using System.Reflection;
+using UnityEngine;
+using RoR2;
+using System.Linq;
+using System;
 
 namespace PassivePicasso.RainOfStages.Proxy
 {
-    public class MusicTrackDefRef : RoR2.MusicTrackDef, IProxyReference<global::RoR2.MusicTrackDef>
+    public class MusicTrackDefRef : MusicTrackDef, IProxyReference<MusicTrackDef>
     {
+        private static FieldInfo[] writableFields;
+
+        static MusicTrackDefRef()
+        {
+            writableFields = typeof(MusicTrackDef)
+                .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(field => (field.GetCustomAttributes().Any(attr => attr is SerializeField) || field.IsPublic) && !field.IsNotSerialized)
+                .ToArray();
+        }
+
         void Awake()
         {
             if (Application.isEditor) return;
-            var trackDef = (global::RoR2.MusicTrackDef)ResolveProxy();
-            this.catalogIndex = trackDef.catalogIndex;
-            this.comment = trackDef.comment;
-            this.soundBank = trackDef.soundBank;
-            this.states = trackDef.states;
+            var trackDef = ResolveProxy();
+            foreach (var field in writableFields)
+            {
+                try
+                {
+                    field.SetValue(this, field.GetValue(trackDef));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            }
         }
 
-        public global::RoR2.MusicTrackDef ResolveProxy() => LoadTrack<global::RoR2.MusicTrackDef>();
-
-        private T LoadTrack<T>() where T : global::RoR2.MusicTrackDef
-        {
-            string name = (this as ScriptableObject)?.name;
-            var card = Resources.Load<T>($"musictrackdefs/{name}");
-            return card;
-        }
+        public MusicTrackDef ResolveProxy() => Resources.Load<MusicTrackDef>($"MusicTrackDefs/{(this as ScriptableObject)?.name}");
     }
 }

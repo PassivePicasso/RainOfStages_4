@@ -1,45 +1,57 @@
+using RoR2;
+using System;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Proxy
 {
-    public class CharacterSpawnCard : global::RoR2.CharacterSpawnCard, IProxyReference<global::RoR2.SpawnCard>
+    public class CharacterSpawnCard : RoR2.CharacterSpawnCard, IProxyReference<SpawnCard>
     {
-        static FieldInfo runtimeLoadoutField = typeof(global::RoR2.CharacterSpawnCard).GetField("runtimeLoadout", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        //static FieldInfo runtimeLoadoutField = typeof(RoR2.CharacterSpawnCard).GetField("runtimeLoadout", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
+        private static FieldInfo[] writableFields;
+
+        static CharacterSpawnCard()
+        {
+            writableFields = typeof(RoR2.CharacterSpawnCard)
+                .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(field => (field.GetCustomAttributes().Any(attr => attr is SerializeField) || field.IsPublic) && !field.IsNotSerialized)
+                .ToArray();
+
+        }
         new void Awake()
         {
             if (Application.isEditor) return;
-            var card = (global::RoR2.CharacterSpawnCard)ResolveProxy();
+            var card = (RoR2.CharacterSpawnCard)ResolveProxy();
 
-            prefab = card.prefab;
-            loadout = card.loadout;
-            noElites = card.noElites;
-            hullSize = card.hullSize;
-            nodeGraphType = card.nodeGraphType;
-            requiredFlags = card.requiredFlags;
-            forbiddenFlags = card.forbiddenFlags;
-            occupyPosition = card.occupyPosition;
-
-            runtimeLoadoutField.SetValue(this, runtimeLoadoutField.GetValue(card));
-
-            forbiddenAsBoss = card.forbiddenAsBoss;
-            sendOverNetwork = card.sendOverNetwork;
-            directorCreditCost = card.directorCreditCost;
+            foreach (var field in writableFields)
+            {
+                try
+                {
+                    field.SetValue(this, field.GetValue(card));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            }
             base.Awake();
         }
-        public global::RoR2.SpawnCard ResolveProxy() => LoadCard<global::RoR2.CharacterSpawnCard>();
 
-        private T LoadCard<T>() where T : global::RoR2.SpawnCard
+        public SpawnCard ResolveProxy() 
         {
-            var card = Resources.Load<T>($"spawncards/{typeof(T).Name.ToLower()}s/{name}");
-            if (card == null)
-                card = Resources.Load<T>($"SpawnCards/{typeof(T).Name}s/{name}");
-            if (card == null)
-                card = Resources.Load<T>($"spawncards/{typeof(T).Name.ToLower()}s/titan/{name}");
-            if (card == null)
-                card = Resources.Load<T>($"SpawnCards/{typeof(T).Name}s/Titan/{name}");
-            return card;
+            switch (name)
+            {
+                case "cscGrandparent":
+                case "cscTitanBlackBeach":
+                case "cscTitanDampCave":
+                case "cscTitanGolemPlains":
+                case "cscTitanGooLake":
+                    return Resources.Load<SpawnCard>($"SpawnCards/CharacterSpawnCards/Titan/{name}");
+                default:
+                    return Resources.Load<SpawnCard>($"SpawnCards/CharacterSpawnCards/{name}");
+            }
         }
     }
 }

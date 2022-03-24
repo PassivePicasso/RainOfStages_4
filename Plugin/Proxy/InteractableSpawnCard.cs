@@ -1,35 +1,41 @@
+using RoR2;
+using System;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace PassivePicasso.RainOfStages.Proxy
 {
-    public class InteractableSpawnCard : global::RoR2.InteractableSpawnCard, IProxyReference<global::RoR2.SpawnCard>
+    public class InteractableSpawnCard : RoR2.InteractableSpawnCard, IProxyReference<SpawnCard>
     {
+        private static FieldInfo[] writableFields;
+
+        static InteractableSpawnCard()
+        {
+            writableFields = typeof(RoR2.InteractableSpawnCard)
+                .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(field => (field.GetCustomAttributes().Any(attr => attr is SerializeField) || field.IsPublic) && !field.IsNotSerialized)
+                .ToArray();
+
+        }
+        public SpawnCard ResolveProxy() => Resources.Load<SpawnCard>($"SpawnCards/InteractableSpawnCard/{name}");
         void Awake()
         {
             if (Application.isEditor) return;
-            var card = (global::RoR2.InteractableSpawnCard)ResolveProxy();
+            var card = (RoR2.InteractableSpawnCard)ResolveProxy();
 
-            prefab = card.prefab;
-            sendOverNetwork = card.sendOverNetwork;
-            hullSize = card.hullSize;
-            nodeGraphType = card.nodeGraphType;
-            requiredFlags = card.requiredFlags;
-            forbiddenFlags = card.forbiddenFlags;
-            directorCreditCost = card.directorCreditCost;
-            occupyPosition = card.occupyPosition;
-            orientToFloor = card.orientToFloor;
-            slightlyRandomizeOrientation = card.slightlyRandomizeOrientation;
-            skipSpawnWhenSacrificeArtifactEnabled = card.skipSpawnWhenSacrificeArtifactEnabled;
+            foreach (var field in writableFields)
+            {
+                try
+                {
+                    field.SetValue(this, field.GetValue(card));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            }
         }
 
-        public global::RoR2.SpawnCard ResolveProxy() => LoadCard<global::RoR2.InteractableSpawnCard>();
-
-        private T LoadCard<T>() where T : global::RoR2.SpawnCard
-        {
-            var card = Resources.Load<T>($"spawncards/{typeof(T).Name.ToLower()}/{name}");
-            if (card == null)
-                card = Resources.Load<T>($"SpawnCards/{typeof(T).Name}/{name}");
-            return card;
-        }
     }
 }
