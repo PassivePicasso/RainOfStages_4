@@ -1,3 +1,5 @@
+## This project is no longer being maintained
+
 Rain of Stages is a framework to assist in the creation, testing, packaging and deployment of custom Risk of Rain 2 stages and mods.
 
 As a player you can install Rain of Stages and then additionally install any custom Stage mods to add custom stages to your stage list.
